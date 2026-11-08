@@ -1,70 +1,39 @@
-// Buyurtmani Telegram bot orqali MILA JEWELRY chatiga yuboradi.
-// Netlify'da 2 ta o'zgaruvchi kerak (Project configuration → Environment variables):
-//   TG_TOKEN   — @BotFather bergan bot tokeni
-//   TG_CHAT_ID — buyurtmalar tushadigan chat yoki guruh ID raqami
-// TG_CHAT_ID hali qo'yilmagan bo'lsa, shu manzilni brauzerda ochsangiz
-// (/.netlify/functions/order) botga yozgan chatlar ro'yxati va ularning ID'si chiqadi.
+// Saytdan kelgan buyurtmani qabul qiladi: raqam beradi, saqlaydi, guruhga holat tugmalari bilan yuboradi,
+// Telegram orqali tasdiqlangan mijozga esa tasdiq xabarini jo'natadi.
+// Sozlash izohi: netlify/lib/shop.mjs faylining boshida.
 
-import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+import {
+  env, json, tg, verifyAuth, nextOrderNo, saveOrder, addUserOrder, getLang, setLang,
+  groupText, groupKeyboard, customerText, menuKeyboard, nowTash, PAY,
+} from "../lib/shop.mjs";
 
-const eqHex = (a, b) => {
-  try { return a.length === b.length && timingSafeEqual(Buffer.from(a, "hex"), Buffer.from(b, "hex")); } catch { return false; }
-};
+const str = (v, max) => (typeof v === "string" ? v.trim().slice(0, max) : "");
 
-// Mijozning Telegram akkauntini tekshirish: Login Widget yoki Mini App imzosi
-function verifyAuth(auth, token) {
-  if (!auth || typeof auth !== "object") return null;
-  const DAY = 86400;
-  const now = Math.floor(Date.now() / 1000);
-  if (auth.type === "widget" && auth.data && typeof auth.data === "object") {
-    const { hash, ...rest } = auth.data;
-    if (typeof hash !== "string") return null;
-    const dcs = Object.keys(rest).sort().map((k) => `${k}=${rest[k]}`).join("\n");
-    const secret = createHash("sha256").update(token).digest();
-    const check = createHmac("sha256", secret).update(dcs).digest("hex");
-    if (!eqHex(check, hash) || now - Number(rest.auth_date) > DAY) return null;
-    return { id: rest.id, username: rest.username, first_name: rest.first_name, via: "Login" };
-  }
-  if (auth.type === "webapp" && typeof auth.initData === "string" && auth.initData.length < 4096) {
-    const params = new URLSearchParams(auth.initData);
-    const hash = params.get("hash");
-    if (!hash) return null;
-    params.delete("hash");
-    const dcs = [...params.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${k}=${v}`).join("\n");
-    const secret = createHmac("sha256", "WebAppData").update(token).digest();
-    const check = createHmac("sha256", secret).update(dcs).digest("hex");
-    if (!eqHex(check, hash) || now - Number(params.get("auth_date")) > DAY) return null;
-    let u = null;
-    try { u = JSON.parse(params.get("user") || "null"); } catch {}
-    if (!u?.id) return null;
-    return { id: u.id, username: u.username, first_name: u.first_name, via: "Mini App" };
-  }
-  return null;
+function cleanOrder(o) {
+  const items = Array.isArray(o?.items) ? o.items.slice(0, 30) : [];
+  return {
+    items: items.map((it) => ({
+      name: str(it?.name, 100),
+      variant: str(it?.variant, 100),
+      q: Math.min(99, Math.max(1, parseInt(it?.q, 10) || 1)),
+      price: str(it?.price, 40),
+    })).filter((it) => it.name),
+    dl: str(o?.dl, 60),
+    addr: str(o?.addr, 300),
+    pay: o?.pay === "card" ? "card" : "cod",
+  };
 }
 
-const json = (data, status = 200) =>
-  new Response(JSON.stringify(data), {
-    status,
-    headers: { "Content-Type": "application/json; charset=utf-8" },
-  });
-
 export default async (req) => {
-  // nusxa olishda qo'shilib qolgan bo'sh joy, qo'shtirnoq va "bot" so'zini tozalaymiz
-  const clean = (v) => (v || "").replace(/["'`\s]/g, "").replace(/^bot(?=\d)/i, "");
-  const token = clean(process.env.TG_TOKEN);
-  const chatId = clean(process.env.TG_CHAT_ID);
+  const e = env();
 
   if (req.method === "GET") {
-    if (!token) return json({ holat: "TG_TOKEN qo'yilmagan" }, 500);
-    if (chatId) return json({ holat: "Sozlangan ✓" });
-    const me = await (await fetch(`https://api.telegram.org/bot${token}/getMe`)).json();
-    if (!me.ok) return json({ holat: "Token noto'g'ri", xato: me.description, tokenUzunligi: token.length, kerakliKorinish: "1234567890:AAH... (boshida raqamlar, keyin ikki nuqta, jami 45-46 belgi)", toGriShakl: /^\d{6,12}:[A-Za-z0-9_-]{30,}$/.test(token) }, 500);
+    if (!e.token) return json({ holat: "TG_TOKEN qo'yilmagan" }, 500);
+    if (e.chatId) return json({ holat: "Sozlangan ✓" });
+    const me = await tg(e.token, "getMe");
+    if (!me.ok) return json({ holat: "Token noto'g'ri", xato: me.description }, 500);
     const bot = "@" + me.result.username;
-    let d = await (await fetch(`https://api.telegram.org/bot${token}/getUpdates`)).json();
-    if (!d.ok && /webhook/i.test(d.description || "")) {
-      await fetch(`https://api.telegram.org/bot${token}/deleteWebhook`);
-      d = await (await fetch(`https://api.telegram.org/bot${token}/getUpdates`)).json();
-    }
+    const d = await tg(e.token, "getUpdates");
     if (!d.ok) return json({ bot, holat: "Telegram xatosi", xato: d.description }, 500);
     const chats = {};
     for (const u of d.result || []) {
@@ -73,63 +42,64 @@ export default async (req) => {
     }
     return json({
       bot,
-      holat: Object.keys(chats).length
-        ? "Quyidagi ID'lardan birini TG_CHAT_ID qilib qo'ying."
-        : `Chat topilmadi. Telegramda ${bot} botini ochib /start yozing, keyin sahifani yangilang.`,
+      holat: Object.keys(chats).length ? "Quyidagi ID'lardan birini TG_CHAT_ID qilib qo'ying." : `Chat topilmadi. ${bot} botiga /start yozing.`,
       chatlar: Object.entries(chats).map(([id, nomi]) => ({ id, nomi })),
     });
   }
 
   if (req.method !== "POST") return json({ error: "method" }, 405);
-  if (!token || !chatId) return json({ error: "not_configured" }, 503);
+  if (!e.token || !e.chatId) return json({ error: "not_configured" }, 503);
 
   let body;
-  try {
-    body = await req.json();
-  } catch {
-    return json({ error: "bad_json" }, 400);
-  }
-  const text = typeof body?.text === "string" ? body.text.trim() : "";
+  try { body = await req.json(); } catch { return json({ error: "bad_json" }, 400); }
   if (body?.hp) return json({ ok: true }); // bot-spam tuzog'i
-  if (!text || text.length > 3500 || !text.startsWith("🛍 Yangi buyurtma")) {
-    return json({ error: "bad_order" }, 400);
-  }
+  const text = str(body?.text, 3500);
+  if (!text.startsWith("🛍 Yangi buyurtma")) return json({ error: "bad_order" }, 400);
 
-  const who = verifyAuth(body?.auth, token);
-  const fullText = who
-    ? `${text}\n\n✅ Telegram tasdiqlangan (${who.via}): ${who.username ? "@" + who.username : who.first_name || ""} · ID ${who.id}`
-    : text;
+  // buyurtma raqami (saqlash ishlamasa ham buyurtma yo'qolmasin)
+  let no, stored = true;
+  try { no = await nextOrderNo(); } catch { stored = false; no = "T" + Date.now().toString().slice(-6); }
 
-  const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, text: fullText }),
-  });
-  if (!r.ok) return json({ error: "telegram" }, 502);
+  const who = verifyAuth(body?.auth, e.token);
+  const ord = cleanOrder(body?.order);
+  const at = nowTash();
+  let gtext = text.replace(/^🛍 Yangi buyurtma[^\n]*/, `🛍 Buyurtma №${no} — MILA JEWELRY`);
+  if (who) gtext += `\n\n✅ Telegram tasdiqlangan (${who.via}): ${who.username ? "@" + who.username : who.first_name || ""} · ID ${who.id}`;
 
-  // Toshkent uchun: Telegram'da xaritadagi aniq nuqta
+  const o = {
+    no, text: gtext, status: "new", history: [{ s: "new", at }], createdAt: Date.now(),
+    user: who ? { id: who.id, username: who.username || "", first_name: who.first_name || "" } : null,
+    ...ord,
+  };
+
+  const sent = await tg(e.token, "sendMessage", { chat_id: e.chatId, text: groupText(o), reply_markup: groupKeyboard(o) });
+  if (!sent.ok) return json({ error: "telegram", xato: sent.description }, 502);
+  o.groupMsgId = sent.result.message_id;
+
+  // Toshkent uchun: xaritadagi aniq nuqta
   const g = body?.geo;
   if (g && Number.isFinite(g.lat) && Number.isFinite(g.lng) && Math.abs(g.lat) <= 90 && Math.abs(g.lng) <= 180) {
-    const m = await r.json().catch(() => null);
-    await fetch(`https://api.telegram.org/bot${token}/sendLocation`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: chatId,
-        latitude: g.lat,
-        longitude: g.lng,
-        ...(m?.result?.message_id ? { reply_parameters: { message_id: m.result.message_id } } : {}),
-      }),
-    }).catch(() => {});
+    await tg(e.token, "sendLocation", { chat_id: e.chatId, latitude: g.lat, longitude: g.lng, reply_parameters: { message_id: o.groupMsgId } });
   }
-  // Mijozga tasdiq xabari (faqat imzosi tekshirilgan Telegram akkauntiga)
-  const ctext = typeof body?.ctext === "string" ? body.ctext.trim() : "";
-  if (who && ctext.startsWith("✅ Buyurtmangiz qabul qilindi") && ctext.length < 2000) {
-    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: who.id, text: ctext }),
-    }).catch(() => {});
+
+  if (stored) {
+    try {
+      await saveOrder(o);
+      if (who) await addUserOrder(who.id, no);
+    } catch { stored = false; }
   }
-  return json({ ok: true });
+
+  // mijozga tasdiq (faqat imzosi tekshirilgan Telegram akkauntiga)
+  if (who) {
+    const l = await getLang(who.id, (who.lang || "").startsWith("ru") ? "ru" : "uz").catch(() => "uz");
+    await setLang(who.id, l).catch(() => {}); // keyingi holat xabarlari shu tilda borsin
+    await tg(e.token, "sendMessage", { chat_id: who.id, text: customerText(o, e, l), reply_markup: menuKeyboard(l) });
+  }
+
+  return json({
+    ok: true,
+    no,
+    pay: o.pay === "card" && e.card ? { card: e.card, name: e.cardName } : null,
+    payLabel: PAY[o.pay].uz,
+  });
 };

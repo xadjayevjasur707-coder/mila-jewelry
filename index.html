@@ -273,6 +273,10 @@ a{color:#8E0A0E}a:hover{color:#5A0306}
 <label class="opt"><input type="radio" name="dl" value="Viloyat — pochta"><span>Viloyatlarga — pochta<small>Oʻzbekiston boʻylab</small></span></label>
 </div>
 
+<div class="fl"><span>Toʻlov usuli</span>
+<label class="opt"><input type="radio" name="pay" value="cod" checked><span>Qabul qilganda<small>Kuryerga naqd yoki karta orqali</small></span></label>
+<label class="opt"><input type="radio" name="pay" value="card"><span>Kartaga oʻtkazma<small>Karta raqami buyurtmadan soʻng koʻrsatiladi</small></span></label>
+</div>
 <label class="fl" for="o-n">Ismingiz<input class="in" id="o-n" autocomplete="name" enterkeyhint="next"></label>
 <p class="err" id="e-n">Ismingizni yozing</p>
 <div class="fl"><label for="o-ph">Telefon raqamingiz</label>
@@ -314,6 +318,13 @@ a{color:#8E0A0E}a:hover{color:#5A0306}
 <div class="ok"><svg aria-hidden="true" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
 <h3 class="sh-title" id="ds-t">Rahmat!</h3>
 <p id="ds-msg" style="margin:0;color:#6E4B45;font-size:16px">Buyurtmangiz qabul qilindi. Tez orada siz bilan bogʻlanamiz.</p>
+<div id="ds-card" style="display:none;width:100%;box-sizing:border-box;background:#fff;border:1.5px solid #DCC4AE;border-radius:14px;padding:14px;text-align:left">
+<p class="eyebrow" style="margin-bottom:6px">Kartaga oʻtkazma</p>
+<p id="ds-card-n" style="margin:0;font-size:20px;font-weight:700;letter-spacing:1px"></p>
+<p id="ds-card-o" style="margin:2px 0 10px;color:#6E4B45;font-size:14px"></p>
+<button type="button" class="ghost-btn" id="ds-copy" style="min-height:44px">Raqamni nusxalash</button>
+<p class="note" style="margin-top:8px;text-align:left">Toʻlovdan soʻng chek skrinshotini Telegram orqali yuboring.</p>
+</div>
 <a class="main-btn btn" id="ds-tg" href="#" target="_blank" rel="noopener" style="display:none;align-items:center;justify-content:center;text-decoration:none">Telegram orqali yuborish</a>
 <button type="button" class="ghost-btn" data-close>Yopish</button>
 </div>
@@ -433,7 +444,7 @@ $("cm").addEventListener("click",function(e){var b=e.target.closest(".chip");if(
 function setCm(v){cm=v||"Telegram";[].forEach.call($("cm").children,function(c){c.setAttribute("aria-pressed",c.getAttribute("data-cm")===cm);});}
 function tgNorm(v){return (v||"").trim().replace(/^https?:\/\/(www\.)?t(elegram)?\.me\//i,"").replace(/^@+/,"").replace(/[\/?#].*$/,"");}
 $("o-tg").addEventListener("input",function(){setErr("tg",false);});
-function fillUser(){var u=store("mila_user");if(!u)return;if(!$("o-n").value)$("o-n").value=u.n||"";if(!ph.value)ph.value=fmt(u.ph||"");if(!$("o-a").value)$("o-a").value=u.a||"";if(!$("o-tg").value)$("o-tg").value=u.tg||"";if(u.cm)setCm(u.cm);
+function fillUser(){var u=store("mila_user");if(!u)return;if(!$("o-n").value)$("o-n").value=u.n||"";if(!ph.value)ph.value=fmt(u.ph||"");if(!$("o-a").value)$("o-a").value=u.a||"";if(!$("o-tg").value)$("o-tg").value=u.tg||"";if(u.cm)setCm(u.cm);if(u.pay){var pr=document.querySelector('input[name="pay"][value="'+u.pay+'"]');if(pr)pr.checked=true;}
  if(u.dl){var r=document.querySelector('input[name="dl"][value="'+u.dl+'"]');if(r)r.checked=true;}}
 ["n","a"].forEach(function(k){$("o-"+k).addEventListener("input",function(){if(this.value.trim())setErr(k,false);});});
 $("o-n").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();ph.focus();}});
@@ -476,18 +487,15 @@ if(WA){try{WA.ready();WA.expand();if(WA.setHeaderColor)WA.setHeaderColor("#6B030
   if(a){e.preventDefault();if(a.href.indexOf("https://t.me/")===0)WA.openTelegramLink(a.href);else WA.openLink(a.href);}},true);
 }
 function askWrite(cb){if(WA&&WA.isVersionAtLeast&&WA.isVersionAtLeast("6.9")){try{WA.requestWriteAccess(function(){cb();});return;}catch(e){}}cb();}
-function custText(o){var l=["✅ Buyurtmangiz qabul qilindi — MILA JEWELRY",""];
- o.items.forEach(function(it,i){l.push((i+1)+". "+it.name+(it.variant?" ("+it.variant+")":"")+" — "+it.q+" dona");});
- l.push("","🚚 "+o.dl,"📍 "+o.a,"","Tez orada siz bilan bogʻlanamiz. Savollar boʻlsa: @"+TG);return l.join("\n");}
 function orderText(o){var lines=["🛍 Yangi buyurtma — MILA JEWELRY",""];
  o.items.forEach(function(it,i){lines.push((i+1)+". 💍 "+it.name+(it.variant?" ("+it.variant+")":"")+" — "+it.q+" dona — "+it.price);});
- lines.push("","🚚 Yetkazish: "+o.dl,"👤 Ism: "+o.n,"📞 Telefon: +998 "+fmt(o.ph),"☎️ Bogʻlanish: "+o.cm,"💬 Telegram: "+(o.tg?"@"+o.tg+" → https://t.me/"+o.tg:"username yoʻq — telefon orqali toping"),"📍 Manzil: "+o.a);
+ lines.push("","🚚 Yetkazish: "+o.dl,"💳 Toʻlov: "+(o.pay==="card"?"Kartaga oʻtkazma":"Qabul qilganda"),"👤 Ism: "+o.n,"📞 Telefon: +998 "+fmt(o.ph),"☎️ Bogʻlanish: "+o.cm,"💬 Telegram: "+(o.tg?"@"+o.tg+" → https://t.me/"+o.tg:"username yoʻq — telefon orqali toping"),"📍 Manzil: "+o.a);
  if(o.geo)lines.push("🗺 Lokatsiya: https://maps.google.com/?q="+o.geo.lat+","+o.geo.lng,"   Yandex: https://yandex.uz/maps/?pt="+o.geo.lng+","+o.geo.lat+"&z=17");
  if(o.gift)lines.push("🎁 Sovgʻa qadoqlash: ha");if(o.c)lines.push("📝 Izoh: "+o.c);return lines.join("\n");}
 
 $("cf").addEventListener("submit",function(e){e.preventDefault();
  if(!cart.length)return;
- var o={n:$("o-n").value.trim(),ph:digits(ph.value),a:$("o-a").value.trim(),c:$("o-c").value.trim(),gift:$("o-g").checked,dl:(document.querySelector('input[name="dl"]:checked')||{}).value||"",tg:tgNorm($("o-tg").value),cm:cm};
+ var o={n:$("o-n").value.trim(),ph:digits(ph.value),a:$("o-a").value.trim(),c:$("o-c").value.trim(),gift:$("o-g").checked,dl:(document.querySelector('input[name="dl"]:checked')||{}).value||"",tg:tgNorm($("o-tg").value),cm:cm,pay:(document.querySelector('input[name="pay"]:checked')||{}).value||"cod"};
  var bad=false;
  if(!o.n){setErr("n",true);bad=true;}
  if(o.ph.length!==9){setErr("ph",true);bad=true;}
@@ -496,20 +504,22 @@ $("cf").addEventListener("submit",function(e){e.preventDefault();
  if(bad){var first=document.querySelector(".err.on");if(first)first.scrollIntoView({block:"center",behavior:"smooth"});return;}
  o.geo=(geo&&o.dl.indexOf("Toshkent")===0)?geo:null;
  o.items=cart.map(function(c){var p=byId[c.id];return {name:p.name,variant:meta(c),q:c.q,price:p.price};});
- store("mila_user",{n:o.n,ph:o.ph,a:o.a,dl:o.dl,tg:o.tg,cm:o.cm});
+ store("mila_user",{n:o.n,ph:o.ph,a:o.a,dl:o.dl,tg:o.tg,cm:o.cm,pay:o.pay});
  var text=orderText(o);
  var btn=$("cs-send");btn.disabled=true;btn.textContent="Yuborilmoqda…";
- var done=function(ok){btn.disabled=false;btn.textContent="Buyurtma berish";
+ var done=function(ok,res){res=res||{};btn.disabled=false;btn.textContent="Buyurtma berish";
   var a=$("ds-tg");
-  if(ok){$("ds-msg").textContent="Buyurtmangiz qabul qilindi. "+(o.cm==="Qoʻngʻiroq"?"Tez orada +998 "+fmt(o.ph)+" raqamiga qoʻngʻiroq qilamiz.":o.cm==="Telegram"?"Tez orada Telegram orqali "+(o.tg?"@"+o.tg+" ga":"siz bilan")+" bogʻlanamiz.":"Tez orada Telegram yoki telefon orqali bogʻlanamiz.");a.style.display="none";cart=[];saveCart();$("o-c").value="";geo=null;$("geo-txt").textContent="Joylashuvimni yuborish";$("geo-note").textContent="Kuryer sizni aniq topishi uchun. Ixtiyoriy.";$("o-g").checked=false;}
+  if(ok){$("ds-msg").textContent=(res.no?"Buyurtma №"+res.no+" qabul qilindi. ":"Buyurtmangiz qabul qilindi. ")+(TGU?"Tasdiq Telegramingizga yuborildi. ":"")+(o.cm==="Qoʻngʻiroq"?"Tez orada +998 "+fmt(o.ph)+" raqamiga qoʻngʻiroq qilamiz.":o.cm==="Telegram"?"Tez orada Telegram orqali "+(o.tg?"@"+o.tg+" ga":"siz bilan")+" bogʻlanamiz.":"Tez orada Telegram yoki telefon orqali bogʻlanamiz.");a.style.display="none";cart=[];saveCart();$("o-c").value="";geo=null;$("geo-txt").textContent="Joylashuvimni yuborish";$("geo-note").textContent="Kuryer sizni aniq topishi uchun. Ixtiyoriy.";$("o-g").checked=false;}
   else{$("ds-msg").textContent="Buyurtmani yakunlash uchun pastdagi tugmani bosing — Telegramda tayyor matn ochiladi, faqat “Yuborish”ni bosing.";
    a.href="https://t.me/"+TG+"?text="+encodeURIComponent(text);a.style.display="flex";
    a.onclick=function(){try{navigator.clipboard&&navigator.clipboard.writeText(text);}catch(e){}cart=[];saveCart();};}
+  var cb=$("ds-card");if(ok&&res.pay&&res.pay.card){$("ds-card-n").textContent=res.pay.card;$("ds-card-o").textContent=res.pay.name||"";cb.style.display="block";
+   $("ds-copy").onclick=function(){var t=res.pay.card.replace(/\s/g,"");try{navigator.clipboard.writeText(t).then(function(){$("ds-copy").textContent="✓ Nusxalandi";});}catch(e){}};}else cb.style.display="none";
   openSheet("ds");};
  askWrite(function(){
  var ctl=window.AbortController?new AbortController():null;var tm=setTimeout(function(){if(ctl)ctl.abort();},12000);
- fetch("/.netlify/functions/order",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:text,hp:"",geo:o.geo,auth:AUTH,ctext:custText(o)}),signal:ctl?ctl.signal:undefined})
-  .then(function(r){clearTimeout(tm);done(r.ok);}).catch(function(){clearTimeout(tm);done(false);});
+ fetch("/.netlify/functions/order",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:text,hp:"",geo:o.geo,auth:AUTH,order:{items:o.items,dl:o.dl,addr:o.a,pay:o.pay}}),signal:ctl?ctl.signal:undefined})
+  .then(function(r){clearTimeout(tm);return r.json().catch(function(){return {};}).then(function(d){done(r.ok,d);});}).catch(function(){clearTimeout(tm);done(false);});
  });
 });
 updFab();

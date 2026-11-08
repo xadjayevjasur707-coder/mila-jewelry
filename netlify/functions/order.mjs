@@ -64,5 +64,21 @@ export default async (req) => {
     body: JSON.stringify({ chat_id: chatId, text }),
   });
   if (!r.ok) return json({ error: "telegram" }, 502);
+
+  // Toshkent uchun: Telegram'da xaritadagi aniq nuqta
+  const g = body?.geo;
+  if (g && Number.isFinite(g.lat) && Number.isFinite(g.lng) && Math.abs(g.lat) <= 90 && Math.abs(g.lng) <= 180) {
+    const m = await r.json().catch(() => null);
+    await fetch(`https://api.telegram.org/bot${token}/sendLocation`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        latitude: g.lat,
+        longitude: g.lng,
+        ...(m?.result?.message_id ? { reply_parameters: { message_id: m.result.message_id } } : {}),
+      }),
+    }).catch(() => {});
+  }
   return json({ ok: true });
 };

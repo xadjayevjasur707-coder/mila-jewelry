@@ -4,6 +4,7 @@
 import {
   cfg, json, tg, webhookSecret, getOrder, saveOrder, userOrders, getLang, setLang,
   STATUSES, stLabel, notifyText, payInfo, groupText, groupKeyboard, menuKeyboard, menuAction, nowTash,
+  receiptKeyboard, canConfirmPay,
 } from "../../lib/shop.js";
 
 const T = {
@@ -13,10 +14,14 @@ const T = {
     list: "🛒 Soʻnggi buyurtmalaringiz:",
     pcs: "dona",
     last: (o) => `🚚 Oxirgi buyurtma №${o.no}\nHolati: ${stLabel(o.status, "uz")}`,
-    help: (s) => `💬 Savolingiz boʻlsa, operatorimizga yozing: @${s}\n\nToʻlov chekini ham shu yerga yuborishingiz mumkin.`,
+    help: (s) => `💬 Savolingiz boʻlsa, operatorimizga yozing: @${s}\n\n🧾 Toʻlov chekini esa shu chatga rasm qilib yuboring.`,
     pick: "Tilni tanlang:",
     set: "✅ Til oʻzgartirildi.",
     unknown: "Pastdagi menyudan foydalaning yoki «🛍 Doʻkon» tugmasini bosing.",
+    rcvOk: (no) => `🧾 Chek qabul qilindi — buyurtma №${no}.\nToʻlov tekshirilgach, sizga xabar beramiz.`,
+    rcvNone: "Chekni biriktiradigan buyurtma topilmadi. Avval 🛍 «Doʻkon» orqali buyurtma bering.",
+    paidOk: (no) => `✅ Buyurtma №${no} uchun toʻlovingiz qabul qilindi. Rahmat! 💍`,
+    paidBad: (no) => `❌ Buyurtma №${no} boʻyicha toʻlov hali tushmagan koʻrinadi. Iltimos, chekni tekshirib qayta yuboring yoki «💬 Yordam» orqali yozing.`,
   },
   ru: {
     hi: (n) => `Здравствуйте${n ? ", " + n : ""}! 💍\nДобро пожаловать в MILA JEWELRY.\n\n🛍 Чтобы открыть каталог, нажмите кнопку «Doʻkon» внизу.\nВаши заказы и их статус — в «🛒 Мои заказы».`,
@@ -24,10 +29,14 @@ const T = {
     list: "🛒 Ваши последние заказы:",
     pcs: "шт.",
     last: (o) => `🚚 Последний заказ №${o.no}\nСтатус: ${stLabel(o.status, "ru")}`,
-    help: (s) => `💬 Если есть вопросы, напишите оператору: @${s}\n\nСкриншот чека об оплате тоже можно отправить туда.`,
+    help: (s) => `💬 Если есть вопросы, напишите оператору: @${s}\n\n🧾 Чек об оплате отправьте фото прямо в этот чат.`,
     pick: "Выберите язык:",
     set: "✅ Язык изменён.",
     unknown: "Пользуйтесь меню внизу или нажмите «🛍 Doʻkon».",
+    rcvOk: (no) => `🧾 Чек получен — заказ №${no}.\nМы сообщим, как только проверим оплату.`,
+    rcvNone: "Не найден заказ для этого чека. Сначала оформите заказ через 🛍 «Doʻkon».",
+    paidOk: (no) => `✅ Оплата по заказу №${no} получена. Спасибо! 💍`,
+    paidBad: (no) => `❌ Оплата по заказу №${no} пока не поступила. Проверьте чек и отправьте снова или напишите в «💬 Помощь».`,
   },
 };
 
@@ -70,6 +79,25 @@ async function onMessage(m, c, env) {
 
   if (text.startsWith("/start")) return send(t.hi(m.from.first_name));
 
+  // 🧾 chek: rasm yoki fayl (PDF) — oxirgi to'lanmagan buyurtmaga biriktiriladi
+  if (m.photo || (m.document && /^(image\/|application\/pdf)/.test(m.document.mime_type || ""))) {
+    const list = await userOrders(env, uid);
+    const o = list.find((x) => x.paid !== true && x.status !== "cancelled");
+    if (!o) return send(t.rcvNone);
+    const who = m.from.username ? "@" + m.from.username : m.from.first_name || "";
+    const cp = await tg(c.token, "copyMessage", {
+      chat_id: c.chatId, from_chat_id: uid, message_id: m.message_id,
+      caption: `🧾 Toʻlov cheki — buyurtma №${o.no}\n👤 ${who} · ID ${uid}\n💳 ${o.pay === "card" ? "Kartaga oʻtkazma" : "Qabul qilganda"}\n\nPul tushganini tekshirib, tugmani bosing.`,
+      reply_markup: receiptKeyboard(o.no),
+      reply_parameters: o.groupMsgId ? { message_id: o.groupMsgId, allow_sending_without_reply: true } : undefined,
+    });
+    if (!cp.ok) return send(t.rcvNone);
+    o.receipt = { at: nowTash(), msgId: cp.result?.message_id };
+    await saveOrder(env, o);
+    if (o.groupMsgId) await tg(c.token, "editMessageText", { chat_id: c.chatId, message_id: o.groupMsgId, text: groupText(o), reply_markup: groupKeyboard(o) });
+    return send(t.rcvOk(o.no));
+  }
+
   switch (menuAction(text)) {
     case "orders": {
       const list = await userOrders(env, uid);
@@ -110,6 +138,30 @@ async function onCallback(q, c, env) {
     await setLang(env, q.from.id, a);
     await answer(T[a].set);
     return tg(c.token, "sendMessage", { chat_id: q.from.id, text: T[a].set, reply_markup: menuKeyboard(a) });
+  }
+
+  if (kind === "pay") {
+    if (String(q.message?.chat?.id) !== String(c.chatId)) return answer("⛔");
+    if (!canConfirmPay(c, q.from)) return answer(`⛔ Faqat toʻlovga masʼul xodim tasdiqlaydi. Sizning ID: ${q.from.id}`);
+    const o = await getOrder(env, a);
+    if (!o) return answer("Buyurtma topilmadi");
+    const by = q.from.username ? "@" + q.from.username : q.from.first_name;
+    const ok = b === "ok";
+    if (ok) { o.paid = true; o.paidBy = by; o.paidAt = nowTash(); } else { o.paid = false; o.receipt = null; }
+    await saveOrder(env, o);
+    await tg(c.token, "editMessageCaption", {
+      chat_id: q.message.chat.id, message_id: q.message.message_id,
+      caption: `${(q.message.caption || "").split("\n\n")[0]}\n\n${ok ? "✅ Toʻlov tushdi" : "❌ Toʻlov tushmagan"} — ${by}, ${nowTash()}`,
+      reply_markup: { inline_keyboard: [] },
+    });
+    if (o.groupMsgId) await tg(c.token, "editMessageText", { chat_id: c.chatId, message_id: o.groupMsgId, text: groupText(o), reply_markup: groupKeyboard(o) });
+    let note = "";
+    if (o.user?.id) {
+      const l = await getLang(env, o.user.id, "uz");
+      const r = await tg(c.token, "sendMessage", { chat_id: o.user.id, text: ok ? T[l].paidOk(o.no) : T[l].paidBad(o.no), reply_markup: menuKeyboard(l) });
+      note = r.ok ? " · mijozga xabar yuborildi" : "";
+    }
+    return answer((ok ? "✅ Toʻlov tasdiqlandi" : "❌ Belgilandi") + note);
   }
 
   if (kind === "st") {

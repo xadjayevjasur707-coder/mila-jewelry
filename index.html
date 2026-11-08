@@ -175,75 +175,277 @@ a{color:#8E0A0E}a:hover{color:#5A0306}
 
 </div>
 
+<style>
+.ov{position:fixed;inset:0;background:rgba(30,2,4,.6);display:none;align-items:flex-end;justify-content:center;z-index:50;padding:12px;font-family:Manrope,sans-serif}
+.ov.on{display:flex}
+.sheet{background:#FAF4EC;color:#3D0103;width:100%;max-width:460px;border-radius:22px;display:flex;flex-direction:column;box-shadow:0 30px 80px rgba(0,0,0,.4);animation:popA .35s cubic-bezier(.2,.8,.2,1) both;max-height:92vh;overflow:hidden}
+.sh-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:20px 20px 12px}
+.sh-body{overflow:auto;padding:0 20px 16px;display:flex;flex-direction:column;gap:14px;-webkit-overflow-scrolling:touch}
+.sh-foot{padding:12px 20px 16px;border-top:1px solid #EAD9C6;background:#FAF4EC;display:flex;flex-direction:column;gap:8px}
+.x{width:44px;height:44px;border-radius:50%;border:1px solid #EAD9C6;background:#fff;cursor:pointer;font-size:22px;color:#3D0103;flex:none}
+.eyebrow{margin:0;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#8E0A0E}
+.sh-title{margin:4px 0 0;font-family:'Cormorant Garamond',serif;font-size:28px;line-height:1.1}
+.fl{display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:600}
+.in{min-height:48px;border:1px solid #DCC4AE;border-radius:12px;padding:0 14px;font:500 16px Manrope,sans-serif;background:#fff;color:#3D0103;width:100%;box-sizing:border-box}
+.in:focus{outline:2px solid #8E0A0E;outline-offset:1px}
+.in.bad{border-color:#B3261E;background:#FFF5F4}
+.err{margin:0;font-size:13px;color:#B3261E;display:none}
+.err.on{display:block}
+.phone{display:flex;align-items:stretch;border:1px solid #DCC4AE;border-radius:12px;background:#fff;overflow:hidden}
+.phone span{display:flex;align-items:center;padding:0 12px;background:#F2E3D3;font-weight:700;font-size:16px}
+.phone .in{border:0;border-radius:0;min-height:48px}
+.phone:focus-within{outline:2px solid #8E0A0E;outline-offset:1px}
+.phone.bad{border-color:#B3261E}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:44px;padding:8px 16px;border-radius:999px;border:1.5px solid #DCC4AE;background:#fff;color:#3D0103;font:600 15px Manrope,sans-serif;cursor:pointer;transition:all .2s}
+.chip[aria-pressed="true"]{background:#6B0301;border-color:#6B0301;color:#F6EDE2}
+.opt{display:flex;align-items:center;gap:12px;min-height:56px;padding:10px 14px;border:1.5px solid #DCC4AE;border-radius:14px;background:#fff;cursor:pointer;font-size:15px;font-weight:600}
+.opt input{width:20px;height:20px;accent-color:#6B0301;margin:0}
+.opt small{display:block;font-weight:500;color:#6E4B45;font-size:13px}
+.opt:has(input:checked){border-color:#6B0301;background:#FDF7F2}
+.qty{display:flex;align-items:center;gap:6px}
+.qb{width:40px;height:40px;border-radius:50%;border:1px solid #DCC4AE;background:#fff;font-size:18px;cursor:pointer;color:#3D0103}
+.ci{display:flex;gap:12px;align-items:center;padding:10px;border:1px solid #EAD9C6;border-radius:14px;background:#fff}
+.thumb{width:64px;height:64px;border-radius:10px;background:#F2E3D3;flex:none;display:flex;align-items:center;justify-content:center;color:#7E5B53;overflow:hidden}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.ci-name{margin:0;font-weight:700;font-size:15px}
+.ci-meta{margin:2px 0 0;font-size:13px;color:#6E4B45}
+.rm{background:none;border:0;color:#8E0A0E;font:600 13px Manrope,sans-serif;cursor:pointer;padding:6px 0;min-height:32px}
+.main-btn{min-height:54px;border:0;border-radius:999px;background:#6B0301;color:#F6EDE2;font:700 16px Manrope,sans-serif;cursor:pointer;width:100%}
+.main-btn[disabled]{opacity:.6;cursor:default}
+.ghost-btn{min-height:48px;border:1.5px solid #6B0301;border-radius:999px;background:transparent;color:#6B0301;font:700 15px Manrope,sans-serif;cursor:pointer;width:100%;text-decoration:none;display:flex;align-items:center;justify-content:center}
+.note{margin:0;font-size:13px;color:#6E4B45;text-align:center}
+.cartfab{position:fixed;right:16px;bottom:16px;z-index:40;display:none;align-items:center;gap:10px;min-height:56px;padding:0 22px 0 18px;border:0;border-radius:999px;background:#6B0301;color:#F6EDE2;font:700 16px Manrope,sans-serif;box-shadow:0 14px 34px rgba(61,1,3,.4);cursor:pointer}
+.cartfab.on{display:flex;animation:popA .4s cubic-bezier(.2,.8,.2,1) both}
+.cartfab .cnt{background:#F6EDE2;color:#6B0301;border-radius:999px;min-width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:14px;padding:0 6px}
+.cartfab.bump{animation:bump .4s ease}
+@keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.15)}100%{transform:scale(1)}}
+.toast{position:fixed;left:50%;bottom:88px;transform:translateX(-50%) translateY(20px);background:#3D0103;color:#F6EDE2;padding:12px 18px;border-radius:14px;font:600 15px Manrope,sans-serif;z-index:60;opacity:0;pointer-events:none;transition:all .3s;box-shadow:0 10px 30px rgba(0,0,0,.3);max-width:90vw;text-align:center}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.check{display:flex;align-items:center;gap:12px;min-height:52px;padding:10px 14px;border:1.5px solid #DCC4AE;border-radius:14px;background:#fff;cursor:pointer;font-size:15px;font-weight:600}
+.check input{width:22px;height:22px;accent-color:#6B0301;margin:0}
+.done{display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;padding:28px 8px 8px}
+.done .ok{width:72px;height:72px;border-radius:50%;background:#6B0301;color:#F6EDE2;display:flex;align-items:center;justify-content:center;animation:popA .5s cubic-bezier(.2,.8,.2,1) both}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+
+<button type="button" class="cartfab" id="fab" aria-label="Savatni ochish">
+<svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h12l-1 13H7z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>
+<span>Savat</span><span class="cnt" id="fab-n">0</span>
+</button>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- VARIANT SHEET -->
+<div class="ov" id="vs" role="dialog" aria-modal="true" aria-labelledby="vs-t">
+<div class="sheet">
+<div class="sh-head">
+<div style="display:flex;gap:12px;align-items:center">
+<div class="thumb" id="vs-img"></div>
+<div><p class="eyebrow" id="vs-cat"></p><h3 class="sh-title" id="vs-t" style="font-size:24px"></h3><p id="vs-p" style="margin:2px 0 0;font-weight:700"></p></div>
+</div>
+<button type="button" class="x" data-close aria-label="Yopish">×</button>
+</div>
+<div class="sh-body">
+<div class="fl" id="vs-color-w"><span>Rangi</span><div class="chips" id="vs-color"></div></div>
+<div class="fl" id="vs-size-w"><span>Oʻlchami</span><div class="chips" id="vs-size"></div></div>
+<div style="display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:600">Soni
+<div class="qty"><button type="button" class="qb" id="vs-m" aria-label="Kamaytirish">−</button><span id="vs-q" aria-live="polite" style="min-width:24px;text-align:center;font-size:17px">1</span><button type="button" class="qb" id="vs-pl" aria-label="Koʻpaytirish">+</button></div></div>
+</div>
+<div class="sh-foot">
+<button type="button" class="main-btn btn" id="vs-add">Savatga qoʻshish</button>
+</div>
+</div>
+</div>
+
+<!-- CART / CHECKOUT SHEET -->
+<div class="ov" id="cs" role="dialog" aria-modal="true" aria-labelledby="cs-t">
+<form class="sheet" id="cf" novalidate>
+<div class="sh-head">
+<div><p class="eyebrow">Buyurtma</p><h3 class="sh-title" id="cs-t">Savatingiz</h3></div>
+<button type="button" class="x" data-close aria-label="Yopish">×</button>
+</div>
+<div class="sh-body" id="cs-body">
+<div id="cs-items" style="display:flex;flex-direction:column;gap:10px"></div>
+<button type="button" class="ghost-btn" data-close style="min-height:44px">+ Yana mahsulot qoʻshish</button>
+
+<div class="fl"><span>Yetkazib berish</span>
+<label class="opt"><input type="radio" name="dl" value="Toshkent — kuryer" checked><span>Toshkent boʻylab — kuryer<small>Shahar ichida eshikkacha</small></span></label>
+<label class="opt"><input type="radio" name="dl" value="Viloyat — pochta"><span>Viloyatlarga — pochta<small>Oʻzbekiston boʻylab</small></span></label>
+</div>
+
+<label class="fl" for="o-n">Ismingiz<input class="in" id="o-n" autocomplete="name" enterkeyhint="next"></label>
+<p class="err" id="e-n">Ismingizni yozing</p>
+<div class="fl"><label for="o-ph">Telefon raqamingiz</label>
+<div class="phone" id="ph-w"><span>+998</span><input class="in" id="o-ph" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="90 123 45 67" enterkeyhint="next"></div></div>
+<p class="err" id="e-ph">Raqamni toʻliq yozing: 9 ta raqam</p>
+<label class="fl" for="o-a">Manzil<input class="in" id="o-a" autocomplete="street-address" placeholder="Shahar, tuman, koʻcha, uy" enterkeyhint="next"></label>
+<p class="err" id="e-a">Manzilni yozing</p>
+<label class="check"><input type="checkbox" id="o-g"><span>🎁 Sovgʻa qadoqlash</span></label>
+<label class="fl" for="o-c">Izoh (ixtiyoriy)<input class="in" id="o-c" enterkeyhint="send"></label>
+</div>
+<div class="sh-foot">
+<button type="submit" class="main-btn btn" id="cs-send">Buyurtma berish</button>
+<p class="note">Operatorimiz tez orada siz bilan bogʻlanadi</p>
+</div>
+</form>
+</div>
+
+<!-- DONE SHEET -->
+<div class="ov" id="ds" role="dialog" aria-modal="true" aria-labelledby="ds-t">
+<div class="sheet">
+<div class="sh-body" style="padding-top:12px">
+<div class="done">
+<div class="ok"><svg aria-hidden="true" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+<h3 class="sh-title" id="ds-t">Rahmat!</h3>
+<p id="ds-msg" style="margin:0;color:#6E4B45;font-size:16px">Buyurtmangiz qabul qilindi. Tez orada siz bilan bogʻlanamiz.</p>
+<a class="main-btn btn" id="ds-tg" href="#" target="_blank" rel="noopener" style="display:none;align-items:center;justify-content:center;text-decoration:none">Telegram orqali yuborish</a>
+<button type="button" class="ghost-btn" data-close>Yopish</button>
+</div>
+</div>
+</div>
+</div>
+
 <script>
 (function(){
+var TG="milajewelry_kh";
+var COLORS=["Oltin rang","Kumush rang"];
+var SIZES=["16","17","18","19","20"];
 var cats=[{id:"all",label:"Hammasi"},{id:"sirga",label:"Sirgʻalar"},{id:"marjon",label:"Marjonlar"},{id:"bilak",label:"Bilakuzuklar"},{id:"uzuk",label:"Uzuklar"}];
 var labels={};cats.forEach(function(c){labels[c.id]=c.label;});
+// img: rasm manzili (masalan "img/sirga1.jpg"); price: narx matni
 var items=[
-{cat:"sirga",name:"Tomchi shaklidagi sirgʻa",badge:"Yangi"},
-{cat:"sirga",name:"Marvarid sirgʻa",badge:""},
-{cat:"marjon",name:"Yupqa zanjirli marjon",badge:"Ommabop"},
-{cat:"marjon",name:"Toshli kulon",badge:""},
-{cat:"bilak",name:"Ingichka bilakuzuk",badge:""},
-{cat:"bilak",name:"Marvaridli bilakuzuk",badge:"Yangi"},
-{cat:"uzuk",name:"Minimal uzuk",badge:""},
-{cat:"uzuk",name:"Toshli uzuk",badge:""}];
+{id:"p1",cat:"sirga",name:"Tomchi shaklidagi sirgʻa",badge:"Yangi",price:"[NARX] soʻm",img:""},
+{id:"p2",cat:"sirga",name:"Marvarid sirgʻa",badge:"",price:"[NARX] soʻm",img:""},
+{id:"p3",cat:"marjon",name:"Yupqa zanjirli marjon",badge:"Ommabop",price:"[NARX] soʻm",img:""},
+{id:"p4",cat:"marjon",name:"Toshli kulon",badge:"",price:"[NARX] soʻm",img:""},
+{id:"p5",cat:"bilak",name:"Ingichka bilakuzuk",badge:"",price:"[NARX] soʻm",img:""},
+{id:"p6",cat:"bilak",name:"Marvaridli bilakuzuk",badge:"Yangi",price:"[NARX] soʻm",img:""},
+{id:"p7",cat:"uzuk",name:"Minimal uzuk",badge:"",price:"[NARX] soʻm",img:""},
+{id:"p8",cat:"uzuk",name:"Toshli uzuk",badge:"",price:"[NARX] soʻm",img:""}];
+var byId={};items.forEach(function(p){byId[p.id]=p;});
+var IMG='<svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg>';
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+function thumb(p){return p.img?'<img src="'+esc(p.img)+'" alt="">':IMG;}
+function $(id){return document.getElementById(id);}
+function store(k,v){try{if(v===undefined){return JSON.parse(localStorage.getItem(k)||"null");}localStorage.setItem(k,JSON.stringify(v));}catch(e){return null;}}
+
+/* ---------- catalog ---------- */
 var on="min-height:44px;padding:10px 18px;border-radius:999px;font:600 14px Manrope,sans-serif;cursor:pointer;background:#6B0301;color:#F6EDE2;border:1.5px solid #6B0301";
 var off="min-height:44px;padding:10px 18px;border-radius:999px;font:600 14px Manrope,sans-serif;cursor:pointer;background:#FFFFFF;color:#3D0103;border:1.5px solid #DCC4AE";
-var cur="all",flip=false,tabs=document.getElementById("tabs"),grid=document.getElementById("grid");
-var img='<svg aria-hidden="true" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg>';
+var curCat="all",flip=false,tabs=$("tabs"),grid=$("grid");
 function render(){
  tabs.innerHTML="";
- cats.forEach(function(c){var b=document.createElement("button");b.type="button";b.className="btn";b.textContent=c.label;b.setAttribute("style",c.id===cur?on:off);b.setAttribute("aria-pressed",c.id===cur);
-  b.onclick=function(){cur=c.id;flip=!flip;render();};tabs.appendChild(b);});
+ cats.forEach(function(c){var b=document.createElement("button");b.type="button";b.className="btn";b.textContent=c.label;b.setAttribute("style",c.id===curCat?on:off);b.setAttribute("aria-pressed",c.id===curCat);
+  b.onclick=function(){curCat=c.id;flip=!flip;render();};tabs.appendChild(b);});
  grid.className=flip?"g-b":"g-a";
- grid.innerHTML=items.filter(function(p){return cur==="all"||p.cat===cur;}).map(function(p){
+ grid.innerHTML=items.filter(function(p){return curCat==="all"||p.cat===curCat;}).map(function(p){
   return '<article class="card" style="display:flex;flex-direction:column;gap:14px;background:#FAF4EC;border:1px solid #EAD9C6;border-radius:18px;padding:14px">'+
-  '<div class="ph" style="height:260px;background:#F2E3D3;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#7E5B53;position:relative">'+img+
-  '<span style="font-size:13px;font-weight:600">Mahsulot rasmi</span>'+(p.badge?'<span class="badge" style="position:absolute;top:12px;left:12px;background:#6B0301;color:#F6EDE2;font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px">'+p.badge+'</span>':'')+'</div>'+
+  '<div class="ph" style="height:260px;background:#F2E3D3;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#7E5B53;position:relative;overflow:hidden">'+
+  (p.img?'<img src="'+esc(p.img)+'" alt="'+esc(p.name)+'" style="width:100%;height:100%;object-fit:cover">':IMG+'<span style="font-size:13px;font-weight:600">Mahsulot rasmi</span>')+
+  (p.badge?'<span class="badge" style="position:absolute;top:12px;left:12px;background:#6B0301;color:#F6EDE2;font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px">'+esc(p.badge)+'</span>':'')+'</div>'+
   '<div style="display:flex;flex-direction:column;gap:4px;padding:0 4px"><span style="font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8E0A0E">'+labels[p.cat]+'</span>'+
-  '<h3 style="margin:0;font-size:17px;font-weight:600;color:#3D0103">'+p.name+'</h3><span style="font-size:18px;font-weight:700;color:#3D0103">[NARX] soʻm</span></div>'+
-  '<button type="button" class="btn order" data-name="'+p.name+'" data-price="[NARX] soʻm" style="text-align:center;background:#6B0301;color:#F6EDE2;padding:13px 16px;border-radius:999px;font-weight:600;font-size:15px;min-height:44px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border:0;cursor:pointer;font-family:Manrope,sans-serif;width:100%">Buyurtma berish</button></article>';
+  '<h3 style="margin:0;font-size:17px;font-weight:600;color:#3D0103">'+esc(p.name)+'</h3><span style="font-size:18px;font-weight:700;color:#3D0103">'+esc(p.price)+'</span></div>'+
+  '<button type="button" class="btn add" data-id="'+p.id+'" style="text-align:center;background:#6B0301;color:#F6EDE2;padding:13px 16px;border-radius:999px;font-weight:600;font-size:15px;min-height:44px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border:0;cursor:pointer;font-family:Manrope,sans-serif;width:100%">Savatga qoʻshish</button></article>';
  }).join("");
 }
 render();
-})();
-</script>
-<div id="om" role="dialog" aria-modal="true" aria-labelledby="om-t" style="position:fixed;inset:0;background:rgba(30,2,4,.6);display:none;align-items:flex-end;justify-content:center;z-index:50;padding:16px;font-family:Manrope,sans-serif">
-<form id="of" style="background:#FAF4EC;color:#3D0103;width:100%;max-width:440px;border-radius:22px;padding:24px;display:flex;flex-direction:column;gap:12px;box-shadow:0 30px 80px rgba(0,0,0,.4);animation:popA .35s cubic-bezier(.2,.8,.2,1) both;max-height:92vh;overflow:auto">
-<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
-<div><p style="margin:0;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#8E0A0E">Buyurtma</p>
-<h3 id="om-t" style="margin:4px 0 0;font-family:'Cormorant Garamond',serif;font-size:28px;line-height:1.1"></h3>
-<p id="om-p" style="margin:4px 0 0;font-weight:700"></p></div>
-<button type="button" id="om-x" aria-label="Yopish" style="width:44px;height:44px;border-radius:50%;border:1px solid #EAD9C6;background:#fff;cursor:pointer;font-size:22px;color:#3D0103;flex:none">×</button>
-</div>
-<label style="display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:600">Ismingiz<input id="o-n" required autocomplete="name" style="min-height:46px;border:1px solid #DCC4AE;border-radius:12px;padding:0 14px;font:500 16px Manrope,sans-serif;background:#fff;color:#3D0103"></label>
-<label style="display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:600">Telefon raqamingiz<input id="o-ph" required type="tel" inputmode="tel" autocomplete="tel" placeholder="+998" style="min-height:46px;border:1px solid #DCC4AE;border-radius:12px;padding:0 14px;font:500 16px Manrope,sans-serif;background:#fff;color:#3D0103"></label>
-<label style="display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:600">Manzil (shahar, tuman)<input id="o-a" required autocomplete="street-address" style="min-height:46px;border:1px solid #DCC4AE;border-radius:12px;padding:0 14px;font:500 16px Manrope,sans-serif;background:#fff;color:#3D0103"></label>
-<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:14px;font-weight:600">Soni
-<div style="display:flex;align-items:center;gap:8px"><button type="button" id="o-m" aria-label="Kamaytirish" style="width:44px;height:44px;border-radius:50%;border:1px solid #DCC4AE;background:#fff;font-size:20px;cursor:pointer;color:#3D0103">−</button><span id="o-q" aria-live="polite" style="min-width:24px;text-align:center;font-size:17px">1</span><button type="button" id="o-pl" aria-label="Ko‘paytirish" style="width:44px;height:44px;border-radius:50%;border:1px solid #DCC4AE;background:#fff;font-size:20px;cursor:pointer;color:#3D0103">+</button></div></div>
-<label style="display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:600">Izoh (ixtiyoriy)<input id="o-c" style="min-height:46px;border:1px solid #DCC4AE;border-radius:12px;padding:0 14px;font:500 16px Manrope,sans-serif;background:#fff;color:#3D0103"></label>
-<button type="submit" class="btn" style="min-height:52px;border:0;border-radius:999px;background:#6B0301;color:#F6EDE2;font:700 16px Manrope,sans-serif;cursor:pointer;margin-top:4px">Telegram orqali yuborish</button>
-<p style="margin:0;font-size:13px;color:#6E4B45;text-align:center">Telegram ochiladi, buyurtma matni tayyor boʻladi — faqat “Yuborish”ni bosing.</p>
-</form>
-</div>
-<script>
-(function(){
-var om=document.getElementById("om"),f=document.getElementById("of"),q=1,cur={};
-function open(n,p){cur={n:n,p:p};q=1;document.getElementById("o-q").textContent=q;document.getElementById("om-t").textContent=n;document.getElementById("om-p").textContent=p;om.style.display="flex";document.body.style.overflow="hidden";setTimeout(function(){document.getElementById("o-n").focus();},50);}
-function close(){om.style.display="none";document.body.style.overflow="";}
-document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest(".order");if(b){open(b.getAttribute("data-name"),b.getAttribute("data-price"));}});
-document.getElementById("om-x").onclick=close;
-om.addEventListener("click",function(e){if(e.target===om)close();});
-document.addEventListener("keydown",function(e){if(e.key==="Escape"&&om.style.display==="flex")close();});
-document.getElementById("o-m").onclick=function(){if(q>1){q--;document.getElementById("o-q").textContent=q;}};
-document.getElementById("o-pl").onclick=function(){q++;document.getElementById("o-q").textContent=q;};
-f.addEventListener("submit",function(e){e.preventDefault();
- var v=function(id){return document.getElementById(id).value.trim();};
- var t="🛍 Yangi buyurtma — MILA JEWELRY\n\n💍 Mahsulot: "+cur.n+"\n💰 Narxi: "+cur.p+"\n🔢 Soni: "+q+"\n\n👤 Ism: "+v("o-n")+"\n📞 Telefon: "+v("o-ph")+"\n📍 Manzil: "+v("o-a")+(v("o-c")?"\n📝 Izoh: "+v("o-c"):"");
- try{navigator.clipboard&&navigator.clipboard.writeText(t);}catch(err){}
- window.location.href="https://t.me/milajewelry_kh?text="+encodeURIComponent(t);
- close();});
+
+/* ---------- sheets ---------- */
+var lastFocus=null;
+function openSheet(id){lastFocus=document.activeElement;["vs","cs","ds"].forEach(function(s){$(s).classList.remove("on");});$(id).classList.add("on");document.body.style.overflow="hidden";fitVV();}
+function closeSheet(){["vs","cs","ds"].forEach(function(s){$(s).classList.remove("on");});document.body.style.overflow="";if(lastFocus&&lastFocus.focus)try{lastFocus.focus();}catch(e){}}
+document.addEventListener("click",function(e){
+ var t=e.target;
+ if(t.closest&&t.closest("[data-close]")){closeSheet();return;}
+ if(t.classList&&t.classList.contains("ov")){closeSheet();return;}
+ var a=t.closest&&t.closest(".add");if(a){openVariant(a.getAttribute("data-id"));}
+});
+document.addEventListener("keydown",function(e){if(e.key==="Escape")closeSheet();});
+// klaviatura ochilganda oyna balandligini moslash: tugma doim ko'rinadi
+function fitVV(){var vv=window.visualViewport;var h=vv?vv.height:window.innerHeight;document.querySelectorAll(".sheet").forEach(function(s){s.style.maxHeight=(h-24)+"px";});
+ document.querySelectorAll(".ov").forEach(function(o){o.style.height=h+"px";o.style.top=(vv?vv.offsetTop:0)+"px";o.style.bottom="auto";});}
+if(window.visualViewport){visualViewport.addEventListener("resize",fitVV);visualViewport.addEventListener("scroll",fitVV);}
+document.addEventListener("focusin",function(e){if(e.target.classList&&e.target.classList.contains("in")){setTimeout(function(){e.target.scrollIntoView({block:"center",behavior:"smooth"});},300);}});
+
+/* ---------- variant ---------- */
+var vSel={};
+function chipRow(el,list,key){el.innerHTML="";list.forEach(function(v){var b=document.createElement("button");b.type="button";b.className="chip";b.textContent=v;b.setAttribute("aria-pressed",vSel[key]===v);
+ b.onclick=function(){vSel[key]=v;chipRow(el,list,key);};el.appendChild(b);});}
+function openVariant(id){var p=byId[id];vSel={id:id,color:COLORS[0],size:p.cat==="uzuk"?SIZES[2]:"",q:1};
+ $("vs-img").innerHTML=thumb(p);$("vs-cat").textContent=labels[p.cat];$("vs-t").textContent=p.name;$("vs-p").textContent=p.price;$("vs-q").textContent="1";
+ chipRow($("vs-color"),COLORS,"color");
+ $("vs-size-w").style.display=p.cat==="uzuk"?"flex":"none";if(p.cat==="uzuk")chipRow($("vs-size"),SIZES,"size");
+ openSheet("vs");}
+$("vs-m").onclick=function(){if(vSel.q>1){vSel.q--;$("vs-q").textContent=vSel.q;}};
+$("vs-pl").onclick=function(){vSel.q++;$("vs-q").textContent=vSel.q;};
+$("vs-add").onclick=function(){addToCart(vSel.id,vSel.color,vSel.size,vSel.q);closeSheet();toast("Savatga qoʻshildi ✓");};
+
+/* ---------- cart ---------- */
+var cart=store("mila_cart")||[];
+cart=cart.filter(function(c){return byId[c.id];});
+function saveCart(){store("mila_cart",cart);updFab();}
+function key(c){return c.id+"|"+c.color+"|"+c.size;}
+function addToCart(id,color,size,q){var k=id+"|"+color+"|"+size;var ex=cart.filter(function(c){return key(c)===k;})[0];if(ex)ex.q+=q;else cart.push({id:id,color:color,size:size,q:q});saveCart();var f=$("fab");f.classList.remove("bump");void f.offsetWidth;f.classList.add("bump");}
+function count(){return cart.reduce(function(s,c){return s+c.q;},0);}
+function updFab(){var n=count();$("fab-n").textContent=n;$("fab").classList.toggle("on",n>0);}
+function meta(c){return [c.color,c.size?("Oʻlcham: "+c.size):""].filter(Boolean).join(" · ");}
+function renderCart(){var box=$("cs-items");
+ if(!cart.length){box.innerHTML='<p class="note" style="padding:12px 0">Savat boʻsh</p>';return;}
+ box.innerHTML=cart.map(function(c,i){var p=byId[c.id];return '<div class="ci"><div class="thumb">'+thumb(p)+'</div><div style="flex:1;min-width:0"><p class="ci-name">'+esc(p.name)+'</p><p class="ci-meta">'+esc(meta(c))+'</p><p class="ci-meta" style="font-weight:700;color:#3D0103">'+esc(p.price)+'</p>'+
+ '<button type="button" class="rm" data-rm="'+i+'">Olib tashlash</button></div><div class="qty" style="flex-direction:column;gap:4px"><button type="button" class="qb" data-pl="'+i+'" aria-label="Koʻpaytirish">+</button><span aria-live="polite" style="font-weight:700">'+c.q+'</span><button type="button" class="qb" data-mi="'+i+'" aria-label="Kamaytirish">−</button></div></div>';}).join("");}
+$("cs-items").addEventListener("click",function(e){var t=e.target,i;
+ if((i=t.getAttribute("data-pl"))!==null){cart[i].q++;}
+ else if((i=t.getAttribute("data-mi"))!==null){if(cart[i].q>1)cart[i].q--;else cart.splice(i,1);}
+ else if((i=t.getAttribute("data-rm"))!==null){cart.splice(i,1);}
+ else return;
+ saveCart();renderCart();if(!cart.length){closeSheet();}});
+$("fab").onclick=function(){renderCart();fillUser();openSheet("cs");};
+
+/* ---------- toast ---------- */
+var tt;function toast(m){var t=$("toast");t.textContent=m;t.classList.add("on");clearTimeout(tt);tt=setTimeout(function(){t.classList.remove("on");},1800);}
+
+/* ---------- form ---------- */
+var ph=$("o-ph");
+function digits(v){return (v||"").replace(/\D/g,"").replace(/^998(?=\d{9})/,"").slice(0,9);}
+function fmt(d){var p=[d.slice(0,2),d.slice(2,5),d.slice(5,7),d.slice(7,9)].filter(Boolean);return p.join(" ");}
+ph.addEventListener("input",function(){ph.value=fmt(digits(ph.value));if(digits(ph.value).length===9)setErr("ph",false);});
+function setErr(k,b){$("e-"+k).classList.toggle("on",b);var el=k==="ph"?$("ph-w"):$("o-"+k);el.classList.toggle("bad",b);}
+function fillUser(){var u=store("mila_user");if(!u)return;if(!$("o-n").value)$("o-n").value=u.n||"";if(!ph.value)ph.value=fmt(u.ph||"");if(!$("o-a").value)$("o-a").value=u.a||"";
+ if(u.dl){var r=document.querySelector('input[name="dl"][value="'+u.dl+'"]');if(r)r.checked=true;}}
+["n","a"].forEach(function(k){$("o-"+k).addEventListener("input",function(){if(this.value.trim())setErr(k,false);});});
+$("o-n").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();ph.focus();}});
+ph.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();$("o-a").focus();}});
+$("o-a").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();$("o-c").focus();}});
+
+function orderText(o){var lines=["🛍 Yangi buyurtma — MILA JEWELRY",""];
+ o.items.forEach(function(it,i){lines.push((i+1)+". 💍 "+it.name+(it.variant?" ("+it.variant+")":"")+" — "+it.q+" dona — "+it.price);});
+ lines.push("","🚚 Yetkazish: "+o.dl,"👤 Ism: "+o.n,"📞 Telefon: +998 "+fmt(o.ph),"📍 Manzil: "+o.a);
+ if(o.gift)lines.push("🎁 Sovgʻa qadoqlash: ha");if(o.c)lines.push("📝 Izoh: "+o.c);return lines.join("\n");}
+
+$("cf").addEventListener("submit",function(e){e.preventDefault();
+ if(!cart.length)return;
+ var o={n:$("o-n").value.trim(),ph:digits(ph.value),a:$("o-a").value.trim(),c:$("o-c").value.trim(),gift:$("o-g").checked,dl:(document.querySelector('input[name="dl"]:checked')||{}).value||""};
+ var bad=false;
+ if(!o.n){setErr("n",true);bad=true;}
+ if(o.ph.length!==9){setErr("ph",true);bad=true;}
+ if(!o.a){setErr("a",true);bad=true;}
+ if(bad){var first=document.querySelector(".err.on");if(first)first.scrollIntoView({block:"center",behavior:"smooth"});return;}
+ o.items=cart.map(function(c){var p=byId[c.id];return {name:p.name,variant:meta(c),q:c.q,price:p.price};});
+ store("mila_user",{n:o.n,ph:o.ph,a:o.a,dl:o.dl});
+ var text=orderText(o);
+ var btn=$("cs-send");btn.disabled=true;btn.textContent="Yuborilmoqda…";
+ var done=function(ok){btn.disabled=false;btn.textContent="Buyurtma berish";
+  var a=$("ds-tg");
+  if(ok){$("ds-msg").textContent="Buyurtmangiz qabul qilindi. Operatorimiz tez orada +998 "+fmt(o.ph)+" raqamiga bogʻlanadi.";a.style.display="none";cart=[];saveCart();$("o-c").value="";$("o-g").checked=false;}
+  else{$("ds-msg").textContent="Buyurtmani yakunlash uchun pastdagi tugmani bosing — Telegramda tayyor matn ochiladi, faqat “Yuborish”ni bosing.";
+   a.href="https://t.me/"+TG+"?text="+encodeURIComponent(text);a.style.display="flex";
+   a.onclick=function(){try{navigator.clipboard&&navigator.clipboard.writeText(text);}catch(e){}cart=[];saveCart();};}
+  openSheet("ds");};
+ var ctl=window.AbortController?new AbortController():null;var tm=setTimeout(function(){if(ctl)ctl.abort();},12000);
+ fetch("/.netlify/functions/order",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:text,hp:""}),signal:ctl?ctl.signal:undefined})
+  .then(function(r){clearTimeout(tm);done(r.ok);}).catch(function(){clearTimeout(tm);done(false);});
+});
+updFab();
 })();
 </script>
 

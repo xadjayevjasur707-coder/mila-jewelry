@@ -1,0 +1,56 @@
+// Buyurtmani Telegram bot orqali MILA JEWELRY chatiga yuboradi.
+// Netlify'da 2 ta o'zgaruvchi kerak (Project configuration → Environment variables):
+//   TG_TOKEN   — @BotFather bergan bot tokeni
+//   TG_CHAT_ID — buyurtmalar tushadigan chat yoki guruh ID raqami
+// TG_CHAT_ID hali qo'yilmagan bo'lsa, shu manzilni brauzerda ochsangiz
+// (/.netlify/functions/order) botga yozgan chatlar ro'yxati va ularning ID'si chiqadi.
+
+const json = (data, status = 200) =>
+  new Response(JSON.stringify(data), {
+    status,
+    headers: { "Content-Type": "application/json; charset=utf-8" },
+  });
+
+export default async (req) => {
+  const token = process.env.TG_TOKEN;
+  const chatId = process.env.TG_CHAT_ID;
+
+  if (req.method === "GET") {
+    if (!token) return json({ holat: "TG_TOKEN qo'yilmagan" }, 500);
+    if (chatId) return json({ holat: "Sozlangan ✓" });
+    const r = await fetch(`https://api.telegram.org/bot${token}/getUpdates`);
+    const d = await r.json();
+    const chats = {};
+    for (const u of d.result || []) {
+      const c = (u.message || u.my_chat_member || u.channel_post || {}).chat;
+      if (c) chats[c.id] = c.title || [c.first_name, c.last_name].filter(Boolean).join(" ") || c.username;
+    }
+    return json({
+      holat: "TG_CHAT_ID hali qo'yilmagan. Quyidagi ID'lardan birini TG_CHAT_ID qilib qo'ying.",
+      chatlar: Object.entries(chats).map(([id, nomi]) => ({ id, nomi })),
+    });
+  }
+
+  if (req.method !== "POST") return json({ error: "method" }, 405);
+  if (!token || !chatId) return json({ error: "not_configured" }, 503);
+
+  let body;
+  try {
+    body = await req.json();
+  } catch {
+    return json({ error: "bad_json" }, 400);
+  }
+  const text = typeof body?.text === "string" ? body.text.trim() : "";
+  if (body?.hp) return json({ ok: true }); // bot-spam tuzog'i
+  if (!text || text.length > 3500 || !text.startsWith("🛍 Yangi buyurtma")) {
+    return json({ error: "bad_order" }, 400);
+  }
+
+  const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId, text }),
+  });
+  if (!r.ok) return json({ error: "telegram" }, 502);
+  return json({ ok: true });
+};

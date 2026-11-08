@@ -278,6 +278,16 @@ a{color:#8E0A0E}a:hover{color:#5A0306}
 <div class="fl"><label for="o-ph">Telefon raqamingiz</label>
 <div class="phone" id="ph-w"><span>+998</span><input class="in" id="o-ph" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="90 123 45 67" enterkeyhint="next"></div></div>
 <p class="err" id="e-ph">Raqamni toʻliq yozing: 9 ta raqam</p>
+<div class="fl"><span id="cm-l">Qanday bogʻlanaylik?</span>
+<div class="chips" role="group" aria-labelledby="cm-l" id="cm">
+<button type="button" class="chip" data-cm="Telegram" aria-pressed="true">💬 Telegram</button>
+<button type="button" class="chip" data-cm="Qoʻngʻiroq" aria-pressed="false">📞 Qoʻngʻiroq</button>
+<button type="button" class="chip" data-cm="Farqi yoʻq" aria-pressed="false">Farqi yoʻq</button>
+</div></div>
+<div class="fl"><label for="o-tg">Telegram username <span style="font-weight:500;color:#6E4B45">(ixtiyoriy)</span></label>
+<div class="phone" id="tg-w"><span>@</span><input class="in" id="o-tg" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="username" enterkeyhint="next"></div></div>
+<p class="err" id="e-tg">Username 5–32 ta lotin harfi, raqam yoki _ boʻlishi kerak</p>
+<p class="note" style="text-align:left;margin-top:-6px">Username boʻlmasa, telefon raqamingiz orqali Telegramdan topamiz.</p>
 <label class="fl" for="o-a">Manzil<input class="in" id="o-a" autocomplete="street-address" placeholder="Shahar, tuman, koʻcha, uy" enterkeyhint="next"></label>
 <p class="err" id="e-a">Manzilni yozing</p>
 <div id="geo-w" style="display:flex;flex-direction:column;gap:6px">
@@ -289,7 +299,7 @@ a{color:#8E0A0E}a:hover{color:#5A0306}
 </div>
 <div class="sh-foot">
 <button type="submit" class="main-btn btn" id="cs-send">Buyurtma berish</button>
-<p class="note">Operatorimiz tez orada siz bilan bogʻlanadi</p>
+<p class="note">Buyurtmani tasdiqlash uchun siz bilan bogʻlanamiz</p>
 </div>
 </form>
 </div>
@@ -413,12 +423,18 @@ var ph=$("o-ph");
 function digits(v){return (v||"").replace(/\D/g,"").replace(/^998(?=\d{9})/,"").slice(0,9);}
 function fmt(d){var p=[d.slice(0,2),d.slice(2,5),d.slice(5,7),d.slice(7,9)].filter(Boolean);return p.join(" ");}
 ph.addEventListener("input",function(){ph.value=fmt(digits(ph.value));if(digits(ph.value).length===9)setErr("ph",false);});
-function setErr(k,b){$("e-"+k).classList.toggle("on",b);var el=k==="ph"?$("ph-w"):$("o-"+k);el.classList.toggle("bad",b);}
-function fillUser(){var u=store("mila_user");if(!u)return;if(!$("o-n").value)$("o-n").value=u.n||"";if(!ph.value)ph.value=fmt(u.ph||"");if(!$("o-a").value)$("o-a").value=u.a||"";
+function setErr(k,b){$("e-"+k).classList.toggle("on",b);var el=k==="ph"?$("ph-w"):k==="tg"?$("tg-w"):$("o-"+k);el.classList.toggle("bad",b);}
+var cm="Telegram";
+$("cm").addEventListener("click",function(e){var b=e.target.closest(".chip");if(!b)return;cm=b.getAttribute("data-cm");[].forEach.call(this.children,function(c){c.setAttribute("aria-pressed",c===b);});});
+function setCm(v){cm=v||"Telegram";[].forEach.call($("cm").children,function(c){c.setAttribute("aria-pressed",c.getAttribute("data-cm")===cm);});}
+function tgNorm(v){return (v||"").trim().replace(/^https?:\/\/(www\.)?t(elegram)?\.me\//i,"").replace(/^@+/,"").replace(/[\/?#].*$/,"");}
+$("o-tg").addEventListener("input",function(){setErr("tg",false);});
+function fillUser(){var u=store("mila_user");if(!u)return;if(!$("o-n").value)$("o-n").value=u.n||"";if(!ph.value)ph.value=fmt(u.ph||"");if(!$("o-a").value)$("o-a").value=u.a||"";if(!$("o-tg").value)$("o-tg").value=u.tg||"";if(u.cm)setCm(u.cm);
  if(u.dl){var r=document.querySelector('input[name="dl"][value="'+u.dl+'"]');if(r)r.checked=true;}}
 ["n","a"].forEach(function(k){$("o-"+k).addEventListener("input",function(){if(this.value.trim())setErr(k,false);});});
 $("o-n").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();ph.focus();}});
-ph.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();$("o-a").focus();}});
+ph.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();$("o-tg").focus();}});
+$("o-tg").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();$("o-a").focus();}});
 $("o-a").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();$("o-c").focus();}});
 
 var geo=null;
@@ -434,26 +450,27 @@ $("geo-btn").onclick=function(){var t=$("geo-txt"),n=$("geo-note");
   {enableHighAccuracy:true,timeout:15000,maximumAge:0});};
 function orderText(o){var lines=["🛍 Yangi buyurtma — MILA JEWELRY",""];
  o.items.forEach(function(it,i){lines.push((i+1)+". 💍 "+it.name+(it.variant?" ("+it.variant+")":"")+" — "+it.q+" dona — "+it.price);});
- lines.push("","🚚 Yetkazish: "+o.dl,"👤 Ism: "+o.n,"📞 Telefon: +998 "+fmt(o.ph),"📍 Manzil: "+o.a);
+ lines.push("","🚚 Yetkazish: "+o.dl,"👤 Ism: "+o.n,"📞 Telefon: +998 "+fmt(o.ph),"☎️ Bogʻlanish: "+o.cm,"💬 Telegram: "+(o.tg?"@"+o.tg+" → https://t.me/"+o.tg:"username yoʻq — telefon orqali toping"),"📍 Manzil: "+o.a);
  if(o.geo)lines.push("🗺 Lokatsiya: https://maps.google.com/?q="+o.geo.lat+","+o.geo.lng,"   Yandex: https://yandex.uz/maps/?pt="+o.geo.lng+","+o.geo.lat+"&z=17");
  if(o.gift)lines.push("🎁 Sovgʻa qadoqlash: ha");if(o.c)lines.push("📝 Izoh: "+o.c);return lines.join("\n");}
 
 $("cf").addEventListener("submit",function(e){e.preventDefault();
  if(!cart.length)return;
- var o={n:$("o-n").value.trim(),ph:digits(ph.value),a:$("o-a").value.trim(),c:$("o-c").value.trim(),gift:$("o-g").checked,dl:(document.querySelector('input[name="dl"]:checked')||{}).value||""};
+ var o={n:$("o-n").value.trim(),ph:digits(ph.value),a:$("o-a").value.trim(),c:$("o-c").value.trim(),gift:$("o-g").checked,dl:(document.querySelector('input[name="dl"]:checked')||{}).value||"",tg:tgNorm($("o-tg").value),cm:cm};
  var bad=false;
  if(!o.n){setErr("n",true);bad=true;}
  if(o.ph.length!==9){setErr("ph",true);bad=true;}
  if(!o.a){setErr("a",true);bad=true;}
+ if(o.tg&&!/^[A-Za-z][A-Za-z0-9_]{4,31}$/.test(o.tg)){setErr("tg",true);bad=true;}
  if(bad){var first=document.querySelector(".err.on");if(first)first.scrollIntoView({block:"center",behavior:"smooth"});return;}
  o.geo=(geo&&o.dl.indexOf("Toshkent")===0)?geo:null;
  o.items=cart.map(function(c){var p=byId[c.id];return {name:p.name,variant:meta(c),q:c.q,price:p.price};});
- store("mila_user",{n:o.n,ph:o.ph,a:o.a,dl:o.dl});
+ store("mila_user",{n:o.n,ph:o.ph,a:o.a,dl:o.dl,tg:o.tg,cm:o.cm});
  var text=orderText(o);
  var btn=$("cs-send");btn.disabled=true;btn.textContent="Yuborilmoqda…";
  var done=function(ok){btn.disabled=false;btn.textContent="Buyurtma berish";
   var a=$("ds-tg");
-  if(ok){$("ds-msg").textContent="Buyurtmangiz qabul qilindi. Operatorimiz tez orada +998 "+fmt(o.ph)+" raqamiga bogʻlanadi.";a.style.display="none";cart=[];saveCart();$("o-c").value="";geo=null;$("geo-txt").textContent="Joylashuvimni yuborish";$("geo-note").textContent="Kuryer sizni aniq topishi uchun. Ixtiyoriy.";$("o-g").checked=false;}
+  if(ok){$("ds-msg").textContent="Buyurtmangiz qabul qilindi. "+(o.cm==="Qoʻngʻiroq"?"Tez orada +998 "+fmt(o.ph)+" raqamiga qoʻngʻiroq qilamiz.":o.cm==="Telegram"?"Tez orada Telegram orqali "+(o.tg?"@"+o.tg+" ga":"siz bilan")+" bogʻlanamiz.":"Tez orada Telegram yoki telefon orqali bogʻlanamiz.");a.style.display="none";cart=[];saveCart();$("o-c").value="";geo=null;$("geo-txt").textContent="Joylashuvimni yuborish";$("geo-note").textContent="Kuryer sizni aniq topishi uchun. Ixtiyoriy.";$("o-g").checked=false;}
   else{$("ds-msg").textContent="Buyurtmani yakunlash uchun pastdagi tugmani bosing — Telegramda tayyor matn ochiladi, faqat “Yuborish”ni bosing.";
    a.href="https://t.me/"+TG+"?text="+encodeURIComponent(text);a.style.display="flex";
    a.onclick=function(){try{navigator.clipboard&&navigator.clipboard.writeText(text);}catch(e){}cart=[];saveCart();};}

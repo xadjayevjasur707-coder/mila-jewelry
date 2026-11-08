@@ -5,6 +5,43 @@
 // TG_CHAT_ID hali qo'yilmagan bo'lsa, shu manzilni brauzerda ochsangiz
 // (/.netlify/functions/order) botga yozgan chatlar ro'yxati va ularning ID'si chiqadi.
 
+import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+
+const eqHex = (a, b) => {
+  try { return a.length === b.length && timingSafeEqual(Buffer.from(a, "hex"), Buffer.from(b, "hex")); } catch { return false; }
+};
+
+// Mijozning Telegram akkauntini tekshirish: Login Widget yoki Mini App imzosi
+function verifyAuth(auth, token) {
+  if (!auth || typeof auth !== "object") return null;
+  const DAY = 86400;
+  const now = Math.floor(Date.now() / 1000);
+  if (auth.type === "widget" && auth.data && typeof auth.data === "object") {
+    const { hash, ...rest } = auth.data;
+    if (typeof hash !== "string") return null;
+    const dcs = Object.keys(rest).sort().map((k) => `${k}=${rest[k]}`).join("\n");
+    const secret = createHash("sha256").update(token).digest();
+    const check = createHmac("sha256", secret).update(dcs).digest("hex");
+    if (!eqHex(check, hash) || now - Number(rest.auth_date) > DAY) return null;
+    return { id: rest.id, username: rest.username, first_name: rest.first_name, via: "Login" };
+  }
+  if (auth.type === "webapp" && typeof auth.initData === "string" && auth.initData.length < 4096) {
+    const params = new URLSearchParams(auth.initData);
+    const hash = params.get("hash");
+    if (!hash) return null;
+    params.delete("hash");
+    const dcs = [...params.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${k}=${v}`).join("\n");
+    const secret = createHmac("sha256", "WebAppData").update(token).digest();
+    const check = createHmac("sha256", secret).update(dcs).digest("hex");
+    if (!eqHex(check, hash) || now - Number(params.get("auth_date")) > DAY) return null;
+    let u = null;
+    try { u = JSON.parse(params.get("user") || "null"); } catch {}
+    if (!u?.id) return null;
+    return { id: u.id, username: u.username, first_name: u.first_name, via: "Mini App" };
+  }
+  return null;
+}
+
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
     status,
@@ -58,10 +95,15 @@ export default async (req) => {
     return json({ error: "bad_order" }, 400);
   }
 
+  const who = verifyAuth(body?.auth, token);
+  const fullText = who
+    ? `${text}\n\n✅ Telegram tasdiqlangan (${who.via}): ${who.username ? "@" + who.username : who.first_name || ""} · ID ${who.id}`
+    : text;
+
   const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, text }),
+    body: JSON.stringify({ chat_id: chatId, text: fullText }),
   });
   if (!r.ok) return json({ error: "telegram" }, 502);
 
@@ -78,6 +120,15 @@ export default async (req) => {
         longitude: g.lng,
         ...(m?.result?.message_id ? { reply_parameters: { message_id: m.result.message_id } } : {}),
       }),
+    }).catch(() => {});
+  }
+  // Mijozga tasdiq xabari (faqat imzosi tekshirilgan Telegram akkauntiga)
+  const ctext = typeof body?.ctext === "string" ? body.ctext.trim() : "";
+  if (who && ctext.startsWith("✅ Buyurtmangiz qabul qilindi") && ctext.length < 2000) {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: who.id, text: ctext }),
     }).catch(() => {});
   }
   return json({ ok: true });

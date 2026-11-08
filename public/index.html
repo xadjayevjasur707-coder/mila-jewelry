@@ -518,7 +518,7 @@ $("cf").addEventListener("submit",function(e){e.preventDefault();
   openSheet("ds");};
  askWrite(function(){
  var ctl=window.AbortController?new AbortController():null;var tm=setTimeout(function(){if(ctl)ctl.abort();},12000);
- fetch("/.netlify/functions/order",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:text,hp:"",geo:o.geo,auth:AUTH,order:{items:o.items,dl:o.dl,addr:o.a,pay:o.pay}}),signal:ctl?ctl.signal:undefined})
+ fetch("/api/order",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:text,hp:"",geo:o.geo,auth:AUTH,order:{items:o.items,dl:o.dl,addr:o.a,pay:o.pay}}),signal:ctl?ctl.signal:undefined})
   .then(function(r){clearTimeout(tm);return r.json().catch(function(){return {};}).then(function(d){done(r.ok,d);});}).catch(function(){clearTimeout(tm);done(false);});
  });
 });

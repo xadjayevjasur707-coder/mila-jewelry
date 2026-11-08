@@ -51,8 +51,10 @@ export async function onRequestGet({ request, env }) {
   });
   await tg(c.token, "setMyCommands", { commands: [{ command: "start", description: "Bosh menyu" }] });
   await tg(c.token, "setMyCommands", { commands: [{ command: "start", description: "Главное меню" }], language_code: "ru" });
+  // Do'kon tugmasi doim shu saytni ochsin
+  const mb = await tg(c.token, "setChatMenuButton", { menu_button: { type: "web_app", text: "🛍 Doʻkon", web_app: { url: url.origin + "/" } } });
   const info = await tg(c.token, "getWebhookInfo");
-  return json({ holat: r.ok ? "✅ Bot ulandi" : "❌ Xato", xato: r.ok ? undefined : r.description, webhook: info.result?.url, baza: env.DB ? "D1 ulangan ✓" : "D1 ulanmagan ✗" });
+  return json({ holat: r.ok ? "✅ Bot ulandi" : "❌ Xato", xato: r.ok ? undefined : r.description, webhook: info.result?.url, dokon_tugmasi: mb.ok ? url.origin + " ✓" : mb.description, baza: env.DB ? "D1 ulangan ✓" : "D1 ulanmagan ✗" });
 }
 
 export async function onRequestPost({ request, env }) {

@@ -12,14 +12,16 @@ const json = (data, status = 200) =>
   });
 
 export default async (req) => {
-  const token = process.env.TG_TOKEN;
-  const chatId = process.env.TG_CHAT_ID;
+  // nusxa olishda qo'shilib qolgan bo'sh joy, qo'shtirnoq va "bot" so'zini tozalaymiz
+  const clean = (v) => (v || "").replace(/["'`\s]/g, "").replace(/^bot(?=\d)/i, "");
+  const token = clean(process.env.TG_TOKEN);
+  const chatId = clean(process.env.TG_CHAT_ID);
 
   if (req.method === "GET") {
     if (!token) return json({ holat: "TG_TOKEN qo'yilmagan" }, 500);
     if (chatId) return json({ holat: "Sozlangan ✓" });
     const me = await (await fetch(`https://api.telegram.org/bot${token}/getMe`)).json();
-    if (!me.ok) return json({ holat: "Token noto'g'ri", xato: me.description }, 500);
+    if (!me.ok) return json({ holat: "Token noto'g'ri", xato: me.description, tokenUzunligi: token.length, kerakliKorinish: "1234567890:AAH... (raqamlar, ikki nuqta, 35 ta belgi)", toGriShakl: /^\d{6,12}:[A-Za-z0-9_-]{30,}$/.test(token) }, 500);
     const bot = "@" + me.result.username;
     let d = await (await fetch(`https://api.telegram.org/bot${token}/getUpdates`)).json();
     if (!d.ok && /webhook/i.test(d.description || "")) {

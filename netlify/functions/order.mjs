@@ -18,15 +18,25 @@ export default async (req) => {
   if (req.method === "GET") {
     if (!token) return json({ holat: "TG_TOKEN qo'yilmagan" }, 500);
     if (chatId) return json({ holat: "Sozlangan ✓" });
-    const r = await fetch(`https://api.telegram.org/bot${token}/getUpdates`);
-    const d = await r.json();
+    const me = await (await fetch(`https://api.telegram.org/bot${token}/getMe`)).json();
+    if (!me.ok) return json({ holat: "Token noto'g'ri", xato: me.description }, 500);
+    const bot = "@" + me.result.username;
+    let d = await (await fetch(`https://api.telegram.org/bot${token}/getUpdates`)).json();
+    if (!d.ok && /webhook/i.test(d.description || "")) {
+      await fetch(`https://api.telegram.org/bot${token}/deleteWebhook`);
+      d = await (await fetch(`https://api.telegram.org/bot${token}/getUpdates`)).json();
+    }
+    if (!d.ok) return json({ bot, holat: "Telegram xatosi", xato: d.description }, 500);
     const chats = {};
     for (const u of d.result || []) {
       const c = (u.message || u.my_chat_member || u.channel_post || {}).chat;
       if (c) chats[c.id] = c.title || [c.first_name, c.last_name].filter(Boolean).join(" ") || c.username;
     }
     return json({
-      holat: "TG_CHAT_ID hali qo'yilmagan. Quyidagi ID'lardan birini TG_CHAT_ID qilib qo'ying.",
+      bot,
+      holat: Object.keys(chats).length
+        ? "Quyidagi ID'lardan birini TG_CHAT_ID qilib qo'ying."
+        : `Chat topilmadi. Telegramda ${bot} botini ochib /start yozing, keyin sahifani yangilang.`,
       chatlar: Object.entries(chats).map(([id, nomi]) => ({ id, nomi })),
     });
   }

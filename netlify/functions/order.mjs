@@ -21,7 +21,7 @@ export default async (req) => {
     if (!token) return json({ holat: "TG_TOKEN qo'yilmagan" }, 500);
     if (chatId) return json({ holat: "Sozlangan ✓" });
     const me = await (await fetch(`https://api.telegram.org/bot${token}/getMe`)).json();
-    if (!me.ok) return json({ holat: "Token noto'g'ri", xato: me.description, tokenUzunligi: token.length, kerakliKorinish: "1234567890:AAH... (raqamlar, ikki nuqta, 35 ta belgi)", toGriShakl: /^\d{6,12}:[A-Za-z0-9_-]{30,}$/.test(token) }, 500);
+    if (!me.ok) return json({ holat: "Token noto'g'ri", xato: me.description, tokenUzunligi: token.length, kerakliKorinish: "1234567890:AAH... (boshida raqamlar, keyin ikki nuqta, jami 45-46 belgi)", toGriShakl: /^\d{6,12}:[A-Za-z0-9_-]{30,}$/.test(token) }, 500);
     const bot = "@" + me.result.username;
     let d = await (await fetch(`https://api.telegram.org/bot${token}/getUpdates`)).json();
     if (!d.ok && /webhook/i.test(d.description || "")) {

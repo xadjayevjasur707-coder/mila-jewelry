@@ -203,11 +203,49 @@ function render(){
   '<span style="font-size:13px;font-weight:600">Mahsulot rasmi</span>'+(p.badge?'<span class="badge" style="position:absolute;top:12px;left:12px;background:#6B0301;color:#F6EDE2;font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px">'+p.badge+'</span>':'')+'</div>'+
   '<div style="display:flex;flex-direction:column;gap:4px;padding:0 4px"><span style="font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8E0A0E">'+labels[p.cat]+'</span>'+
   '<h3 style="margin:0;font-size:17px;font-weight:600;color:#3D0103">'+p.name+'</h3><span style="font-size:18px;font-weight:700;color:#3D0103">[NARX] soʻm</span></div>'+
-  '<a class="btn" href="https://t.me/milajewelry_kh" target="_blank" rel="noopener" style="text-decoration:none;text-align:center;background:#6B0301;color:#F6EDE2;padding:13px 16px;border-radius:999px;font-weight:600;font-size:15px;min-height:44px;box-sizing:border-box;display:flex;align-items:center;justify-content:center">Buyurtma berish</a></article>';
+  '<button type="button" class="btn order" data-name="'+p.name+'" data-price="[NARX] soʻm" style="text-align:center;background:#6B0301;color:#F6EDE2;padding:13px 16px;border-radius:999px;font-weight:600;font-size:15px;min-height:44px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border:0;cursor:pointer;font-family:Manrope,sans-serif;width:100%">Buyurtma berish</button></article>';
  }).join("");
 }
 render();
 })();
 </script>
+<div id="om" role="dialog" aria-modal="true" aria-labelledby="om-t" style="position:fixed;inset:0;background:rgba(30,2,4,.6);display:none;align-items:flex-end;justify-content:center;z-index:50;padding:16px;font-family:Manrope,sans-serif">
+<form id="of" style="background:#FAF4EC;color:#3D0103;width:100%;max-width:440px;border-radius:22px;padding:24px;display:flex;flex-direction:column;gap:12px;box-shadow:0 30px 80px rgba(0,0,0,.4);animation:popA .35s cubic-bezier(.2,.8,.2,1) both;max-height:92vh;overflow:auto">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+<div><p style="margin:0;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#8E0A0E">Buyurtma</p>
+<h3 id="om-t" style="margin:4px 0 0;font-family:'Cormorant Garamond',serif;font-size:28px;line-height:1.1"></h3>
+<p id="om-p" style="margin:4px 0 0;font-weight:700"></p></div>
+<button type="button" id="om-x" aria-label="Yopish" style="width:44px;height:44px;border-radius:50%;border:1px solid #EAD9C6;background:#fff;cursor:pointer;font-size:22px;color:#3D0103;flex:none">×</button>
+</div>
+<label style="display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:600">Ismingiz<input id="o-n" required autocomplete="name" style="min-height:46px;border:1px solid #DCC4AE;border-radius:12px;padding:0 14px;font:500 16px Manrope,sans-serif;background:#fff;color:#3D0103"></label>
+<label style="display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:600">Telefon raqamingiz<input id="o-ph" required type="tel" inputmode="tel" autocomplete="tel" placeholder="+998" style="min-height:46px;border:1px solid #DCC4AE;border-radius:12px;padding:0 14px;font:500 16px Manrope,sans-serif;background:#fff;color:#3D0103"></label>
+<label style="display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:600">Manzil (shahar, tuman)<input id="o-a" required autocomplete="street-address" style="min-height:46px;border:1px solid #DCC4AE;border-radius:12px;padding:0 14px;font:500 16px Manrope,sans-serif;background:#fff;color:#3D0103"></label>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:14px;font-weight:600">Soni
+<div style="display:flex;align-items:center;gap:8px"><button type="button" id="o-m" aria-label="Kamaytirish" style="width:44px;height:44px;border-radius:50%;border:1px solid #DCC4AE;background:#fff;font-size:20px;cursor:pointer;color:#3D0103">−</button><span id="o-q" aria-live="polite" style="min-width:24px;text-align:center;font-size:17px">1</span><button type="button" id="o-pl" aria-label="Ko‘paytirish" style="width:44px;height:44px;border-radius:50%;border:1px solid #DCC4AE;background:#fff;font-size:20px;cursor:pointer;color:#3D0103">+</button></div></div>
+<label style="display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:600">Izoh (ixtiyoriy)<input id="o-c" style="min-height:46px;border:1px solid #DCC4AE;border-radius:12px;padding:0 14px;font:500 16px Manrope,sans-serif;background:#fff;color:#3D0103"></label>
+<button type="submit" class="btn" style="min-height:52px;border:0;border-radius:999px;background:#6B0301;color:#F6EDE2;font:700 16px Manrope,sans-serif;cursor:pointer;margin-top:4px">Telegram orqali yuborish</button>
+<p style="margin:0;font-size:13px;color:#6E4B45;text-align:center">Telegram ochiladi, buyurtma matni tayyor boʻladi — faqat “Yuborish”ni bosing.</p>
+</form>
+</div>
+<script>
+(function(){
+var om=document.getElementById("om"),f=document.getElementById("of"),q=1,cur={};
+function open(n,p){cur={n:n,p:p};q=1;document.getElementById("o-q").textContent=q;document.getElementById("om-t").textContent=n;document.getElementById("om-p").textContent=p;om.style.display="flex";document.body.style.overflow="hidden";setTimeout(function(){document.getElementById("o-n").focus();},50);}
+function close(){om.style.display="none";document.body.style.overflow="";}
+document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest(".order");if(b){open(b.getAttribute("data-name"),b.getAttribute("data-price"));}});
+document.getElementById("om-x").onclick=close;
+om.addEventListener("click",function(e){if(e.target===om)close();});
+document.addEventListener("keydown",function(e){if(e.key==="Escape"&&om.style.display==="flex")close();});
+document.getElementById("o-m").onclick=function(){if(q>1){q--;document.getElementById("o-q").textContent=q;}};
+document.getElementById("o-pl").onclick=function(){q++;document.getElementById("o-q").textContent=q;};
+f.addEventListener("submit",function(e){e.preventDefault();
+ var v=function(id){return document.getElementById(id).value.trim();};
+ var t="🛍 Yangi buyurtma — MILA JEWELRY\n\n💍 Mahsulot: "+cur.n+"\n💰 Narxi: "+cur.p+"\n🔢 Soni: "+q+"\n\n👤 Ism: "+v("o-n")+"\n📞 Telefon: "+v("o-ph")+"\n📍 Manzil: "+v("o-a")+(v("o-c")?"\n📝 Izoh: "+v("o-c"):"");
+ try{navigator.clipboard&&navigator.clipboard.writeText(t);}catch(err){}
+ window.location.href="https://t.me/milajewelry_kh?text="+encodeURIComponent(t);
+ close();});
+})();
+</script>
+
 </body>
 </html>

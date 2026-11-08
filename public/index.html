@@ -271,6 +271,19 @@ a{color:#8E0A0E}a:hover{color:#5A0306}
 <div class="fl"><span>Yetkazib berish</span>
 <label class="opt"><input type="radio" name="dl" value="Toshkent — kuryer" checked><span>Toshkent boʻylab — kuryer<small>Shahar ichida eshikkacha</small></span></label>
 <label class="opt"><input type="radio" name="dl" value="Viloyat — pochta"><span>Viloyatlarga — pochta<small>Oʻzbekiston boʻylab</small></span></label>
+<div id="post-w" style="display:none;flex-direction:column;gap:12px;padding:14px;border:1.5px dashed #DCC4AE;border-radius:14px;background:#FFFDFB">
+<label class="fl" for="o-reg">Viloyat<select class="in" id="o-reg"><option value="">Tanlang…</option><option value="Andijon">Andijon</option><option value="Buxoro">Buxoro</option><option value="Fargʻona">Fargʻona</option><option value="Jizzax">Jizzax</option><option value="Xorazm">Xorazm</option><option value="Namangan">Namangan</option><option value="Navoiy">Navoiy</option><option value="Qashqadaryo">Qashqadaryo</option><option value="Qoraqalpogʻiston Respublikasi">Qoraqalpogʻiston Respublikasi</option><option value="Samarqand">Samarqand</option><option value="Sirdaryo">Sirdaryo</option><option value="Surxondaryo">Surxondaryo</option><option value="Toshkent viloyati">Toshkent viloyati</option></select></label>
+<p class="err" id="e-reg">Viloyatni tanlang</p>
+<label class="fl" for="o-dist">Tuman yoki shahar<input class="in" id="o-dist" placeholder="Masalan: Margʻilon shahri" enterkeyhint="next"></label>
+<p class="err" id="e-dist">Tuman yoki shaharni yozing</p>
+<div class="fl"><span id="ps-l">Pochta xizmati</span><div class="chips" role="group" aria-labelledby="ps-l" id="ps">
+<button type="button" class="chip" data-ps="Oʻzbekiston pochtasi" aria-pressed="true">Oʻzbekiston pochtasi</button>
+<button type="button" class="chip" data-ps="BTS Express" aria-pressed="false">BTS Express</button>
+<button type="button" class="chip" data-ps="Farqi yoʻq" aria-pressed="false">Farqi yoʻq</button>
+</div></div>
+<label class="fl" for="o-idx">Pochta indeksi yoki boʻlim <span style="font-weight:500;color:#6E4B45">(ixtiyoriy)</span><input class="in" id="o-idx" inputmode="numeric" placeholder="Masalan: 150100" enterkeyhint="next"></label>
+<p class="note" style="text-align:left;margin:0">Yetkazish narxi va muddati buyurtmani tasdiqlashda aytiladi.</p>
+</div>
 </div>
 
 <label class="fl" for="o-n">Ismingiz<input class="in" id="o-n" autocomplete="name" enterkeyhint="next"></label>
@@ -444,7 +457,7 @@ $("cm").addEventListener("click",function(e){var b=e.target.closest(".chip");if(
 function setCm(v){cm=v||"Telegram";[].forEach.call($("cm").children,function(c){c.setAttribute("aria-pressed",c.getAttribute("data-cm")===cm);});}
 function tgNorm(v){return (v||"").trim().replace(/^https?:\/\/(www\.)?t(elegram)?\.me\//i,"").replace(/^@+/,"").replace(/[\/?#].*$/,"");}
 $("o-tg").addEventListener("input",function(){setErr("tg",false);});
-function fillUser(){var u=store("mila_user");if(!u)return;if(!$("o-n").value)$("o-n").value=u.n||"";if(!ph.value)ph.value=fmt(u.ph||"");if(!$("o-a").value)$("o-a").value=u.a||"";if(!$("o-tg").value)$("o-tg").value=u.tg||"";if(u.cm)setCm(u.cm);if(u.pay){var pr=document.querySelector('input[name="pay"][value="'+u.pay+'"]');if(pr)pr.checked=true;}
+function fillUser(){var u=store("mila_user");if(!u)return;if(!$("o-n").value)$("o-n").value=u.n||"";if(!ph.value)ph.value=fmt(u.ph||"");if(!$("o-a").value)$("o-a").value=u.a||"";if(!$("o-tg").value)$("o-tg").value=u.tg||"";if(u.cm)setCm(u.cm);if(u.reg)$("o-reg").value=u.reg;if(u.dist&&!$("o-dist").value)$("o-dist").value=u.dist;if(u.ps)setPs(u.ps);if(u.idx&&!$("o-idx").value)$("o-idx").value=u.idx;if(u.pay){var pr=document.querySelector('input[name="pay"][value="'+u.pay+'"]');if(pr)pr.checked=true;}
  if(u.dl){var r=document.querySelector('input[name="dl"][value="'+u.dl+'"]');if(r)r.checked=true;}}
 ["n","a"].forEach(function(k){$("o-"+k).addEventListener("input",function(){if(this.value.trim())setErr(k,false);});});
 $("o-n").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();ph.focus();}});
@@ -453,7 +466,14 @@ $("o-tg").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDe
 $("o-a").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();$("o-c").focus();}});
 
 var geo=null;
-function updGeoVis(){var r=document.querySelector('input[name="dl"]:checked');$("geo-w").style.display=(r&&r.value.indexOf("Toshkent")===0)?"flex":"none";}
+function updGeoVis(){var r=document.querySelector('input[name="dl"]:checked');var tash=!!(r&&r.value.indexOf("Toshkent")===0);
+ $("geo-w").style.display=tash?"flex":"none";$("post-w").style.display=tash?"none":"flex";
+ $("o-a").placeholder=tash?"Tuman, koʻcha, uy, moʻljal":"Mahalla, koʻcha, uy";}
+var ps="Oʻzbekiston pochtasi";
+function setPs(v){ps=v||"Oʻzbekiston pochtasi";[].forEach.call($("ps").children,function(c){c.setAttribute("aria-pressed",c.getAttribute("data-ps")===ps);});}
+$("ps").addEventListener("click",function(e){var b=e.target.closest(".chip");if(b)setPs(b.getAttribute("data-ps"));});
+$("o-reg").addEventListener("change",function(){if(this.value)setErr("reg",false);});
+$("o-dist").addEventListener("input",function(){if(this.value.trim())setErr("dist",false);});
 document.querySelectorAll('input[name="dl"]').forEach(function(r){r.addEventListener("change",updGeoVis);});
 $("geo-btn").onclick=function(){var t=$("geo-txt"),n=$("geo-note");
  if(!navigator.geolocation){n.textContent="Brauzeringiz joylashuvni bera olmaydi. Manzilni batafsil yozing.";return;}
@@ -490,6 +510,7 @@ function askWrite(cb){if(WA&&WA.isVersionAtLeast&&WA.isVersionAtLeast("6.9")){tr
 function orderText(o){var lines=["🛍 Yangi buyurtma — MILA JEWELRY",""];
  o.items.forEach(function(it,i){lines.push((i+1)+". 💍 "+it.name+(it.variant?" ("+it.variant+")":"")+" — "+it.q+" dona — "+it.price);});
  lines.push("","🚚 Yetkazish: "+o.dl,"💳 Toʻlov: "+(o.pay==="card"?"Kartaga oʻtkazma":"Qabul qilganda"),"👤 Ism: "+o.n,"📞 Telefon: +998 "+fmt(o.ph),"☎️ Bogʻlanish: "+o.cm,"💬 Telegram: "+(o.tg?"@"+o.tg+" → https://t.me/"+o.tg:"username yoʻq — telefon orqali toping"),"📍 Manzil: "+o.a);
+ if(o.ps)lines.push("📮 Pochta: "+o.ps+(o.idx?" · indeks/boʻlim: "+o.idx:""));
  if(o.geo)lines.push("🗺 Lokatsiya: https://maps.google.com/?q="+o.geo.lat+","+o.geo.lng,"   Yandex: https://yandex.uz/maps/?pt="+o.geo.lng+","+o.geo.lat+"&z=17");
  if(o.gift)lines.push("🎁 Sovgʻa qadoqlash: ha");if(o.c)lines.push("📝 Izoh: "+o.c);return lines.join("\n");}
 
@@ -500,11 +521,16 @@ $("cf").addEventListener("submit",function(e){e.preventDefault();
  if(!o.n){setErr("n",true);bad=true;}
  if(o.ph.length!==9){setErr("ph",true);bad=true;}
  if(!o.a){setErr("a",true);bad=true;}
+ var vil=o.dl.indexOf("Viloyat")===0;
+ if(vil){o.reg=$("o-reg").value;o.dist=$("o-dist").value.trim();o.ps=ps;o.idx=$("o-idx").value.trim();
+  if(!o.reg){setErr("reg",true);bad=true;}
+  if(!o.dist){setErr("dist",true);bad=true;}}
  if(o.tg&&!(TGU&&TGU.username===o.tg)&&!/^[A-Za-z][A-Za-z0-9_]{3,31}$/.test(o.tg)){setErr("tg",true);bad=true;}
  if(bad){var first=document.querySelector(".err.on");if(first)first.scrollIntoView({block:"center",behavior:"smooth"});return;}
+ o.street=o.a;if(vil)o.a=[o.reg,o.dist,o.a].filter(Boolean).join(", ");
  o.geo=(geo&&o.dl.indexOf("Toshkent")===0)?geo:null;
  o.items=cart.map(function(c){var p=byId[c.id];return {name:p.name,variant:meta(c),q:c.q,price:p.price};});
- store("mila_user",{n:o.n,ph:o.ph,a:o.a,dl:o.dl,tg:o.tg,cm:o.cm,pay:o.pay});
+ store("mila_user",{n:o.n,ph:o.ph,a:o.street,dl:o.dl,tg:o.tg,cm:o.cm,pay:o.pay,reg:o.reg||"",dist:o.dist||"",ps:o.ps||"",idx:o.idx||""});
  var text=orderText(o);
  var btn=$("cs-send");btn.disabled=true;btn.textContent="Yuborilmoqda…";
  var done=function(ok,res){res=res||{};btn.disabled=false;btn.textContent="Buyurtma berish";

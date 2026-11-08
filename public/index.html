@@ -181,6 +181,8 @@ a{color:#8E0A0E}a:hover{color:#5A0306}
 .sheet{background:#FAF4EC;color:#3D0103;width:100%;max-width:460px;border-radius:22px;display:flex;flex-direction:column;box-shadow:0 30px 80px rgba(0,0,0,.4);animation:popA .35s cubic-bezier(.2,.8,.2,1) both;max-height:92vh;overflow:hidden}
 .sh-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:20px 20px 12px}
 .sh-body{overflow:auto;padding:0 20px 16px;display:flex;flex-direction:column;gap:14px;-webkit-overflow-scrolling:touch}
+.sh-body>*{flex-shrink:0}
+#tg-login iframe{max-width:100%}
 .sh-foot{padding:12px 20px 16px;border-top:1px solid #EAD9C6;background:#FAF4EC;display:flex;flex-direction:column;gap:8px}
 .x{width:44px;height:44px;border-radius:50%;border:1px solid #EAD9C6;background:#fff;cursor:pointer;font-size:22px;color:#3D0103;flex:none}
 .eyebrow{margin:0;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#8E0A0E}
@@ -298,7 +300,7 @@ a{color:#8E0A0E}a:hover{color:#5A0306}
 <button type="button" class="chip" data-cm="Qoʻngʻiroq" aria-pressed="false">📞 Qoʻngʻiroq</button>
 <button type="button" class="chip" data-cm="Farqi yoʻq" aria-pressed="false">Farqi yoʻq</button>
 </div></div>
-<div id="tg-login" style="display:flex;flex-direction:column;gap:6px;min-height:44px"></div>
+<div id="tg-login" style="display:flex;flex-direction:column;gap:8px"></div>
 <div class="fl"><label for="o-tg">Telegram username <span style="font-weight:500;color:#6E4B45">(ixtiyoriy)</span></label>
 <div class="phone" id="tg-w"><span>@</span><input class="in" id="o-tg" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="username" enterkeyhint="next"></div></div>
 <p class="err" id="e-tg">Username faqat lotin harflari, raqamlar va _ dan iborat boʻladi</p>

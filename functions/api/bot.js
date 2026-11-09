@@ -5,7 +5,7 @@ import {
   cfg, json, tg, webhookSecret, getOrder, saveOrder, userOrders, getLang, setLang,
   STATUSES, stLabel, notifyText, payInfo, groupText, groupKeyboard, menuKeyboard, menuAction, nowTash,
   receiptKeyboard, canConfirmPay,
-  CATS, fmtPrice, addProduct, getProduct, updateProduct, deleteProduct, listProducts, isAdmin, ADMIN_MENU, adminKeyboard,
+  CATS, fmtPrice, addProduct, getProduct, updateProduct, deleteProduct, listProducts, isAdmin, addAdmin, memberStatus, ADMIN_MENU, adminKeyboard,
 } from "../../lib/shop.js";
 
 const T = {
@@ -67,6 +67,7 @@ export async function onRequestPost({ request, env }) {
   try {
     if (u.callback_query) await onCallback(u.callback_query, c, env);
     else if (u.message?.chat?.type === "private") await onMessage(u.message, c, env);
+    else if (u.message && String(u.message.chat?.id) === String(c.chatId)) await onGroupMessage(u.message, c, env);
   } catch (err) {
     console.error(err);
   }
@@ -78,9 +79,14 @@ async function onMessage(m, c, env) {
   const l = await getLang(env, uid, (m.from.language_code || "").startsWith("ru") ? "ru" : "uz");
   const t = T[l];
   const text = (m.text || "").trim();
-  const admin = await isAdmin(c, uid).catch(() => false);
+  const admin = await isAdmin(c, uid, env).catch(() => false);
   const send = (txt, extra = {}) => tg(c.token, "sendMessage", { chat_id: uid, text: txt, reply_markup: admin ? adminKeyboard(l) : menuKeyboard(l), ...extra });
 
+  if (/^\/admin\b/.test(text)) {
+    if (admin) return send("✅ Siz doʻkon xodimisiz. «➕ Mahsulot qoʻshish» tugmasini bosing.");
+    const st = await memberStatus(c, uid).catch(() => "?");
+    return send(`⛔ Siz hali doʻkon xodimi emassiz (guruhdagi holatingiz: ${st}).\n\nXodim boʻlish uchun buyurtmalar keladigan Telegram guruhiga kiring va oʻsha yerda /admin deb yozing. Keyin shu yerda /start bosing.`);
+  }
   if (text.startsWith("/start")) return send(t.hi(m.from.first_name) + (admin ? "\n\n🛠 Siz doʻkon xodimisiz: mahsulot qoʻshish uchun «➕ Mahsulot qoʻshish» tugmasini bosing." : ""));
   if (admin) {
     const done = await onAdmin(m, c, env, send);
@@ -143,7 +149,7 @@ async function onCallback(q, c, env) {
   const answer = (text) => tg(c.token, "answerCallbackQuery", { callback_query_id: q.id, text });
 
   if (/^p[cvsptnkdy]$/.test(kind) && kind !== "pay") {
-    if (!(await isAdmin(c, q.from.id))) return answer("⛔ Faqat doʻkon xodimlari uchun");
+    if (!(await isAdmin(c, q.from.id, env))) return answer("⛔ Faqat doʻkon xodimlari uchun");
     return onProductCallback(q, kind, a, b, c, env, answer);
   }
 
@@ -350,4 +356,17 @@ async function onProductCallback(q, kind, a, b, c, env, answer) {
       return answer("Oʻchirildi");
   }
   return answer("");
+}
+
+// Buyurtmalar guruhida /admin — yozgan odam mahsulot qo'sha oladigan bo'ladi
+async function onGroupMessage(m, c, env) {
+  const text = (m.text || "").trim();
+  if (!/^\/admin(@\w+)?\b/i.test(text) || !m.from || m.from.is_bot) return;
+  const name = m.from.username ? "@" + m.from.username : m.from.first_name || String(m.from.id);
+  await addAdmin(env, m.from.id, name);
+  await tg(c.token, "sendMessage", {
+    chat_id: m.chat.id,
+    text: `✅ ${name} endi saytga mahsulot qoʻsha oladi.\n\nBotning shaxsiy chatiga oʻtib /start bosing — «➕ Mahsulot qoʻshish» tugmasi chiqadi.`,
+    reply_parameters: { message_id: m.message_id, allow_sending_without_reply: true },
+  });
 }

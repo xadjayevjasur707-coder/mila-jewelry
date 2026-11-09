@@ -5,6 +5,7 @@ import {
   cfg, json, tg, webhookSecret, getOrder, saveOrder, userOrders, getLang, setLang,
   STATUSES, stLabel, notifyText, payInfo, groupText, groupKeyboard, menuKeyboard, menuAction, nowTash,
   receiptKeyboard, canConfirmPay,
+  CATS, fmtPrice, addProduct, getProduct, updateProduct, deleteProduct, listProducts, isAdmin, ADMIN_MENU, adminKeyboard,
 } from "../../lib/shop.js";
 
 const T = {
@@ -77,9 +78,14 @@ async function onMessage(m, c, env) {
   const l = await getLang(env, uid, (m.from.language_code || "").startsWith("ru") ? "ru" : "uz");
   const t = T[l];
   const text = (m.text || "").trim();
-  const send = (txt, extra = {}) => tg(c.token, "sendMessage", { chat_id: uid, text: txt, reply_markup: menuKeyboard(l), ...extra });
+  const admin = await isAdmin(c, uid).catch(() => false);
+  const send = (txt, extra = {}) => tg(c.token, "sendMessage", { chat_id: uid, text: txt, reply_markup: admin ? adminKeyboard(l) : menuKeyboard(l), ...extra });
 
-  if (text.startsWith("/start")) return send(t.hi(m.from.first_name));
+  if (text.startsWith("/start")) return send(t.hi(m.from.first_name) + (admin ? "\n\n🛠 Siz doʻkon xodimisiz: mahsulot qoʻshish uchun «➕ Mahsulot qoʻshish» tugmasini bosing." : ""));
+  if (admin) {
+    const done = await onAdmin(m, c, env, send);
+    if (done !== undefined) return done;
+  }
 
   // 🧾 chek: rasm yoki fayl (PDF) — oxirgi to'lanmagan buyurtmaga biriktiriladi
   if (m.photo || (m.document && /^(image\/|application\/pdf)/.test(m.document.mime_type || ""))) {
@@ -136,6 +142,11 @@ async function onCallback(q, c, env) {
   const [kind, a, b] = String(q.data || "").split("|");
   const answer = (text) => tg(c.token, "answerCallbackQuery", { callback_query_id: q.id, text });
 
+  if (/^p[cvsptnkdy]$/.test(kind) && kind !== "pay") {
+    if (!(await isAdmin(c, q.from.id))) return answer("⛔ Faqat doʻkon xodimlari uchun");
+    return onProductCallback(q, kind, a, b, c, env, answer);
+  }
+
   if (kind === "lang" && (a === "uz" || a === "ru")) {
     await setLang(env, q.from.id, a);
     await answer(T[a].set);
@@ -186,6 +197,157 @@ async function onCallback(q, c, env) {
       note = r.ok ? " · mijozga xabar yuborildi" : " · mijozga yuborib boʻlmadi";
     } else note = " · mijoz Telegram orqali kirmagan, oʻzingiz bogʻlaning";
     return answer(`${stLabel(b)}${note}`);
+  }
+  return answer("");
+}
+
+/* ================= mahsulotlar: mijoz (do'kon xodimi) bot orqali qo'shadi ================= */
+
+const ADD_HELP = `➕ Yangi mahsulot qoʻshish
+
+1️⃣ Mahsulot rasmini shu chatga yuboring
+2️⃣ Rasmning izohiga (podpis) yozing:
+   • 1-qator — nomi
+   • 2-qator — narxi (faqat raqam)
+   • keyingi qatorlar — tavsif (ixtiyoriy)
+
+Masalan:
+Tomchi shaklidagi sirgʻa
+120000
+Yengil, har kunga mos
+
+3️⃣ Boʻlimni tanlang — mahsulot darrov saytda chiqadi ✅
+
+📦 Qoʻshilganlarni oʻzgartirish yoki oʻchirish — «📦 Mahsulotlar» tugmasida.`;
+
+function parseCaption(cap) {
+  const lines = String(cap || "").split("\n").map((x) => x.trim()).filter(Boolean);
+  let price = null;
+  const rest = [];
+  for (const ln of lines) {
+    if (price === null && /\d/.test(ln) && /^[\d\s.,]+(so['ʻ’`‘]?m|sum|сум|uzs)?\.?$/i.test(ln)) price = parseInt(ln.replace(/\D/g, ""), 10);
+    else rest.push(ln);
+  }
+  return { name: (rest[0] || "").slice(0, 100), descr: rest.slice(1).join("\n").slice(0, 500), price };
+}
+
+const catKeyboard = (id) => ({
+  inline_keyboard: [
+    [{ text: "💎 " + CATS.sirga, callback_data: `pc|${id}|sirga` }, { text: "📿 " + CATS.marjon, callback_data: `pc|${id}|marjon` }],
+    [{ text: "⭕ " + CATS.bilak, callback_data: `pc|${id}|bilak` }, { text: "💍 " + CATS.uzuk, callback_data: `pc|${id}|uzuk` }],
+    [{ text: "❌ Bekor qilish", callback_data: `pc|${id}|x` }],
+  ],
+});
+const cardText = (p) =>
+  `${p.live ? "✅ Saytda" : "⏳ Hali saytda emas"}\n\n💍 ${p.name}\n💰 ${fmtPrice(p.price)}\n📂 ${CATS[p.cat] || "—"}${p.descr ? "\n📝 " + p.descr : ""}\n\n🆔 ${p.id}`;
+const cardKeyboard = (id) => ({
+  inline_keyboard: [
+    [{ text: "💰 Narx", callback_data: `pp|${id}` }, { text: "✏️ Nomi", callback_data: `pn|${id}` }],
+    [{ text: "📝 Tavsif", callback_data: `pt|${id}` }, { text: "📂 Boʻlim", callback_data: `pk|${id}` }],
+    [{ text: "🗑 Oʻchirish", callback_data: `pd|${id}` }],
+  ],
+});
+const ASK = {
+  price: (p) => `💰 «${p.name}» uchun yangi narxni yozing (faqat raqam, masalan 120000)`,
+  name: (p) => `✏️ «${p.name}» uchun yangi nomni yozing`,
+  descr: (p) => `📝 «${p.name}» uchun tavsif yozing (oʻchirish uchun «-» yuboring)`,
+};
+
+async function sendCard(c, chatId, p) {
+  return tg(c.token, "sendPhoto", { chat_id: chatId, photo: p.file_id, caption: cardText(p), reply_markup: cardKeyboard(p.id) });
+}
+
+// undefined qaytarsa — oddiy mijoz menyusi davom etadi
+async function onAdmin(m, c, env, send) {
+  const text = (m.text || "").trim();
+
+  if (text === ADMIN_MENU.add) return send(ADD_HELP);
+
+  if (text === ADMIN_MENU.list) {
+    const list = await listProducts(env, 60);
+    if (!list.length) return send("Saytda hali mahsulot yoʻq.\n\n" + ADD_HELP);
+    return send(`📦 Saytda ${list.length} ta mahsulot. Oʻzgartirish uchun tanlang:`, {
+      reply_markup: { inline_keyboard: list.map((p) => [{ text: `${p.name} — ${fmtPrice(p.price)}`.slice(0, 60), callback_data: `pv|${p.id}` }]) },
+    });
+  }
+
+  // narx / nom / tavsifni o'zgartirish so'roviga javob
+  const rq = m.reply_to_message;
+  if (rq?.from?.is_bot && text) {
+    const idm = /🆔 (\d+)\s*$/.exec(rq.text || "");
+    const kind = (rq.text || "").startsWith("💰") ? "price" : (rq.text || "").startsWith("✏️") ? "name" : (rq.text || "").startsWith("📝") ? "descr" : null;
+    if (idm && kind) {
+      const p = await getProduct(env, idm[1]);
+      if (!p) return send("Bu mahsulot topilmadi (oʻchirilgan boʻlishi mumkin).");
+      if (kind === "price") {
+        const n = parseInt(text.replace(/\D/g, ""), 10);
+        if (!n) return tg(c.token, "sendMessage", { chat_id: m.chat.id, text: ASK.price(p) + "\n\n⚠️ Faqat raqam yozing\n\n🆔 " + p.id, reply_markup: { force_reply: true } });
+        p.price = n;
+      } else if (kind === "name") p.name = text.slice(0, 100);
+      else p.descr = text === "-" ? "" : text.slice(0, 500);
+      await updateProduct(env, p.id, { price: p.price, name: p.name, descr: p.descr });
+      await send("✅ Saqlandi. Saytda darrov yangilandi.");
+      return sendCard(c, m.chat.id, p);
+    }
+  }
+
+  // yangi mahsulot: rasm (yoki rasm-fayl) + izoh
+  const doc = m.document && /^image\//.test(m.document.mime_type || "") ? m.document : null;
+  if (m.photo || doc) {
+    if (m.media_group_id && !m.caption) return null; // albomdagi qo'shimcha rasmlar
+    const ph = doc || m.photo[m.photo.length - 1];
+    const cap = parseCaption(m.caption);
+    if (!cap.name || !cap.price) {
+      return send("⚠️ Rasm izohiga nomi va narxini yozing.\n\n" + ADD_HELP, { reply_parameters: { message_id: m.message_id } });
+    }
+    const id = await addProduct(env, { name: cap.name, price: cap.price, descr: cap.descr, file_id: ph.file_id, fuid: ph.file_unique_id });
+    return tg(c.token, "sendMessage", {
+      chat_id: m.chat.id,
+      text: `💍 ${cap.name}\n💰 ${fmtPrice(cap.price)}${cap.descr ? "\n📝 " + cap.descr : ""}\n\n📂 Qaysi boʻlimga qoʻshamiz?`,
+      reply_markup: catKeyboard(id),
+      reply_parameters: { message_id: m.message_id, allow_sending_without_reply: true },
+    });
+  }
+  return undefined;
+}
+
+async function onProductCallback(q, kind, a, b, c, env, answer) {
+  const chatId = q.message?.chat?.id;
+  const edit = (text, kb) => q.message?.photo
+    ? tg(c.token, "editMessageCaption", { chat_id: chatId, message_id: q.message.message_id, caption: text, reply_markup: kb })
+    : tg(c.token, "editMessageText", { chat_id: chatId, message_id: q.message.message_id, text, reply_markup: kb });
+  const p = await getProduct(env, a);
+  if (!p) { await edit("Bu mahsulot oʻchirilgan.", { inline_keyboard: [] }); return answer("Topilmadi"); }
+
+  switch (kind) {
+    case "pc": { // bo'lim tanlandi
+      if (b === "x") {
+        if (!p.live) { await deleteProduct(env, p.id); await edit("❌ Bekor qilindi.", { inline_keyboard: [] }); return answer("Bekor qilindi"); }
+        await edit(cardText(p), cardKeyboard(p.id)); return answer("");
+      }
+      if (!CATS[b]) return answer("?");
+      const first = !p.live;
+      p.cat = b; p.live = 1;
+      await updateProduct(env, p.id, { cat: b, live: 1 });
+      if (first && !q.message?.photo) { await edit(`✅ Saytga qoʻshildi!\n\n💍 ${p.name}\n💰 ${fmtPrice(p.price)}\n📂 ${CATS[b]}`, { inline_keyboard: [] }); await sendCard(c, chatId, p); }
+      else await edit(cardText(p), cardKeyboard(p.id));
+      return answer(first ? "✅ Saytga qoʻshildi" : "✅ Boʻlim oʻzgardi");
+    }
+    case "pv": await sendCard(c, chatId, p); return answer("");
+    case "ps": await edit(cardText(p), cardKeyboard(p.id)); return answer("");
+    case "pk": await edit(cardText(p) + "\n\n📂 Yangi boʻlimni tanlang:", catKeyboard(p.id)); return answer("");
+    case "pp": case "pn": case "pt": {
+      const k = kind === "pp" ? "price" : kind === "pn" ? "name" : "descr";
+      await tg(c.token, "sendMessage", { chat_id: chatId, text: `${ASK[k](p)}\n\n🆔 ${p.id}`, reply_markup: { force_reply: true, input_field_placeholder: k === "price" ? "120000" : "" } });
+      return answer("Javob yozing 👇");
+    }
+    case "pd":
+      await edit(cardText(p) + "\n\n🗑 Rostdan oʻchirilsinmi?", { inline_keyboard: [[{ text: "Ha, oʻchirish", callback_data: `py|${p.id}` }, { text: "Yoʻq", callback_data: `ps|${p.id}` }]] });
+      return answer("");
+    case "py":
+      await deleteProduct(env, p.id);
+      await edit(`🗑 «${p.name}» saytdan oʻchirildi.`, { inline_keyboard: [] });
+      return answer("Oʻchirildi");
   }
   return answer("");
 }

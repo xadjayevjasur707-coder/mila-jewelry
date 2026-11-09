@@ -100,13 +100,31 @@ html{scroll-behavior:smooth;scroll-padding-top:84px}
 @media (max-width:860px){.cats{grid-template-columns:repeat(2,minmax(0,1fr))}.adv{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:520px){.adv{grid-template-columns:1fr}.cat b{font-size:24px}.cat{padding:16px}}
 @media (prefers-reduced-motion: reduce){.reveal,.reveal .stg{opacity:1!important;transform:none!important}.marq-in{animation:none}}
+/* bo'lim sahifasi */
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.back{display:none;align-self:flex-start;align-items:center;gap:8px;min-height:44px;padding:10px 18px 10px 14px;border-radius:999px;border:1.5px solid #DCC4AE;background:#fff;color:#3D0103;font:600 15px Manrope,sans-serif;cursor:pointer}
+.back:active{transform:scale(.96)}
+body.catmode .page>*:not(#hdr):not(#katalog):not(footer){display:none!important}
+body.catmode #katalog{border-top:0!important;background:#FAF4EC!important;opacity:1;transform:none;min-height:70vh}
+body.catmode .kat-in{padding-top:20px!important;gap:16px!important}
+body.catmode .back{display:inline-flex}
+body.catmode .tabs{position:sticky;top:var(--hh,72px);z-index:20;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin:0 -24px;padding:10px 24px;background:rgba(250,244,236,.95);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+body.catmode .tabs::-webkit-scrollbar{display:none}
+body.catmode .tabs button{flex:none}
+.empty{grid-column:1/-1;text-align:center;padding:48px 16px;color:#6E4B45;font-size:16px}
+.cat .cimg{position:absolute;inset:0;background-size:cover;background-position:center;transition:transform .6s cubic-bezier(.2,.8,.2,1)}
+.cat .cimg::after{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,rgba(250,244,236,0) 45%,rgba(250,244,236,.96) 82%)}
+.cat:hover .cimg{transform:scale(1.06)}
+.cat b,.cat small{position:relative}
+.open{cursor:pointer}
+.big{width:100%;aspect-ratio:1/1;max-height:44vh;border-radius:16px;background:#F2E3D3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#7E5B53;overflow:hidden}
+.big img{width:100%;height:100%;object-fit:cover}
 </style>
-
 </head>
 <body>
 
 
-<div style="width: 100%; background: #FAF4EC; color: #3D0103; font-family: 'Manrope', system-ui, sans-serif; font-size: 16px; line-height: 1.55">
+<div class="page" style="width: 100%; background: #FAF4EC; color: #3D0103; font-family: 'Manrope', system-ui, sans-serif; font-size: 16px; line-height: 1.55">
 
 <!-- HEADER -->
 <header id="hdr" style="position:sticky;top:0;z-index:30;background:rgba(107,3,1,.93);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);color:#F6EDE2;border-bottom:1px solid rgba(246,237,226,0.18);transition:box-shadow .3s">
@@ -161,14 +179,13 @@ html{scroll-behavior:smooth;scroll-padding-top:84px}
 
 <!-- CATALOG -->
 <section id="katalog" class="reveal" style="background: #FFFFFF; border-top: 1px solid #EAD9C6; border-bottom: 1px solid #EAD9C6">
-<div style="max-width: 1200px; margin: 0 auto; padding: 72px 24px; display: flex; flex-direction: column; gap: 32px">
-<div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 20px">
+<div class="kat-in" style="max-width: 1200px; margin: 0 auto; padding: 72px 24px; display: flex; flex-direction: column; gap: 24px">
+<button type="button" class="back" id="back"><span aria-hidden="true">←</span> Orqaga</button>
 <div style="display: flex; flex-direction: column; gap: 8px">
-<h2 style="margin: 0; font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 48px; line-height: 1.1">Katalog</h2>
-<p style="margin: 0; color: #6E4B45">Turini tanlang — yoqqan mahsulot ostidagi tugma orqali buyurtma bering.</p>
+<h2 id="kat-h" style="margin: 0; font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: 48px; line-height: 1.1">Katalog</h2>
+<p id="kat-p" style="margin: 0; color: #6E4B45">Turini tanlang — yoqqan mahsulot ostidagi tugma orqali buyurtma bering.</p>
 </div>
-<div id="tabs" style="display: flex; flex-wrap: wrap; gap: 8px"></div>
-</div>
+<div id="tabs" class="tabs"></div>
 
 <div id="grid" class="g-a" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 24px">
 
@@ -311,12 +328,14 @@ html{scroll-behavior:smooth;scroll-padding-top:84px}
 <div class="sheet">
 <div class="sh-head">
 <div style="display:flex;gap:12px;align-items:center">
-<div class="thumb" id="vs-img"></div>
+<div class="thumb" id="vs-img" style="display:none"></div>
 <div><p class="eyebrow" id="vs-cat"></p><h3 class="sh-title" id="vs-t" style="font-size:24px"></h3><p id="vs-p" style="margin:2px 0 0;font-weight:700"></p></div>
 </div>
 <button type="button" class="x" data-close aria-label="Yopish">×</button>
 </div>
 <div class="sh-body">
+<div class="big" id="vs-big"></div>
+<p id="vs-d" style="margin:0;color:#6E4B45;font-size:15px;display:none"></p>
 <div class="fl" id="vs-color-w"><span>Rangi</span><div class="chips" id="vs-color"></div></div>
 <div class="fl" id="vs-size-w"><span>Oʻlchami</span><div class="chips" id="vs-size"></div></div>
 <div style="display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:600">Soni
@@ -424,9 +443,10 @@ var BOT="milajewelry_kh_bot";
 var COLORS=["Oltin rang","Kumush rang"];
 var SIZES=["16","17","18","19","20"];
 var favs=(function(){try{return JSON.parse(localStorage.getItem("mila_fav")||"[]");}catch(e){return [];}})();
-var cats=[{id:"all",label:"Hammasi"},{id:"sirga",label:"Sirgʻalar"},{id:"marjon",label:"Marjonlar"},{id:"bilak",label:"Bilakuzuklar"},{id:"uzuk",label:"Uzuklar"}];
+// img: bo'lim kartasi rasmi (bo'sh bo'lsa, shu bo'limdagi birinchi rasmli mahsulot olinadi)
+var cats=[{id:"all",label:"Hammasi"},{id:"sirga",label:"Sirgʻalar",img:""},{id:"marjon",label:"Marjonlar",img:""},{id:"bilak",label:"Bilakuzuklar",img:""},{id:"uzuk",label:"Uzuklar",img:""}];
 var labels={};cats.forEach(function(c){labels[c.id]=c.label;});
-// img: rasm manzili (masalan "img/sirga1.jpg"); price: narx matni
+// img: rasm manzili (masalan "img/sirga1.jpg"); price: narx matni; desc: qisqa tavsif (ixtiyoriy)
 var items=[
 {id:"p1",cat:"sirga",name:"Tomchi shaklidagi sirgʻa",badge:"Yangi",price:"[NARX] soʻm",img:""},
 {id:"p2",cat:"sirga",name:"Marvarid sirgʻa",badge:"",price:"[NARX] soʻm",img:""},
@@ -447,20 +467,47 @@ function store(k,v){try{if(v===undefined){return JSON.parse(localStorage.getItem
 var on="min-height:44px;padding:10px 18px;border-radius:999px;font:600 14px Manrope,sans-serif;cursor:pointer;background:#6B0301;color:#F6EDE2;border:1.5px solid #6B0301";
 var off="min-height:44px;padding:10px 18px;border-radius:999px;font:600 14px Manrope,sans-serif;cursor:pointer;background:#FFFFFF;color:#3D0103;border:1.5px solid #DCC4AE";
 var curCat="all",flip=false,tabs=$("tabs"),grid=$("grid");
+/* ---------- bo'lim sahifalari: #/sirgalar, #/marjonlar ... ---------- */
+var SLUG={all:"hammasi",sirga:"sirgalar",marjon:"marjonlar",bilak:"bilakuzuklar",uzuk:"uzuklar",fav:"saralangan"};
+var BYSLUG={};Object.keys(SLUG).forEach(function(k){BYSLUG[SLUG[k]]=k;});
+var TITLE=document.title,mainY=null,pushed=false;
+function isPage(){return document.body.classList.contains("catmode");}
+function jump(y){var r=document.documentElement;var o=r.style.scrollBehavior;r.style.scrollBehavior="auto";window.scrollTo(0,y);r.style.scrollBehavior=o;}
+function setHH(){var h=$("hdr");if(h)document.documentElement.style.setProperty("--hh",h.offsetHeight+"px");}
+function go(c,replace){var u="#/"+SLUG[c];if(replace){history.replaceState(history.state,"",u);route();}else{pushed=true;location.hash=u;}}
+function route(){var m=location.hash.match(/^#\/([a-z]+)/);var c=m&&BYSLUG[m[1]];
+ if(c){if(c==="fav"&&!favs.length)c="all";
+  var was=isPage();if(!was)mainY=window.scrollY;document.body.classList.add("catmode");
+  if(c!==curCat||!was){curCat=c;flip=!flip;render();}
+  document.title=(c==="all"?"Katalog":c==="fav"?"Saralanganlar":labels[c])+" — MILA JEWELRY";
+  if(!was)jump(0);setHH();return;}
+ if(!isPage())return;
+ document.body.classList.remove("catmode");document.title=TITLE;curCat="all";render();
+ var id=location.hash.slice(1),el=id&&/^[\w-]+$/.test(id)&&document.getElementById(id);
+ if(el){jump(el.getBoundingClientRect().top+window.scrollY-84);}
+ else{var k=$("kategoriyalar");jump(mainY!=null?mainY:(k?k.offsetTop-84:0));}
+ mainY=null;}
+window.addEventListener("hashchange",route);
+window.addEventListener("resize",setHH);
 function render(){
  tabs.innerHTML="";
  var allTabs=cats.concat(favs.length?[{id:"fav",label:"♡ Saralangan ("+favs.length+")"}]:[]);if(curCat==="fav"&&!favs.length)curCat="all";
  allTabs.forEach(function(c){var b=document.createElement("button");b.type="button";b.className="btn";b.textContent=c.label;b.setAttribute("style",c.id===curCat?on:off);b.setAttribute("aria-pressed",c.id===curCat);
-  b.onclick=function(){curCat=c.id;flip=!flip;render();};tabs.appendChild(b);});
+  b.onclick=function(){if(isPage()){go(c.id,true);return;}curCat=c.id;flip=!flip;render();};tabs.appendChild(b);});
  grid.className=flip?"g-b":"g-a";
- grid.innerHTML=items.filter(function(p){return curCat==="all"||(curCat==="fav"?favs.indexOf(p.id)>=0:p.cat===curCat);}).map(function(p){
+ var list=items.filter(function(p){return curCat==="all"||(curCat==="fav"?favs.indexOf(p.id)>=0:p.cat===curCat);});
+ if(isPage()){$("kat-h").textContent=curCat==="all"?"Barcha mahsulotlar":curCat==="fav"?"Saralanganlar":labels[curCat];$("kat-p").textContent=list.length+" ta mahsulot";}
+ else{$("kat-h").textContent="Katalog";$("kat-p").textContent="Turini tanlang — yoqqan mahsulot ostidagi tugma orqali buyurtma bering.";}
+ var sel=tabs.querySelector('[aria-pressed="true"]');if(sel&&sel.scrollIntoView&&isPage())try{sel.scrollIntoView({block:"nearest",inline:"center"});}catch(e){}
+ if(!list.length){grid.innerHTML='<p class="empty">Bu boʻlimda hozircha mahsulot yoʻq. Tez orada qoʻshiladi ✨</p>';return;}
+ grid.innerHTML=list.map(function(p){
   return '<article class="card" style="display:flex;flex-direction:column;gap:14px;background:#FAF4EC;border:1px solid #EAD9C6;border-radius:18px;padding:14px">'+
-  '<div class="ph" style="height:260px;background:#F2E3D3;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#7E5B53;position:relative;overflow:hidden">'+
+  '<div class="ph open" data-open="'+p.id+'" role="button" tabindex="0" aria-label="'+esc(p.name)+' — batafsil" style="height:260px;background:#F2E3D3;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#7E5B53;position:relative;overflow:hidden">'+
   (p.img?'<img src="'+esc(p.img)+'" alt="'+esc(p.name)+'" style="width:100%;height:100%;object-fit:cover">':IMG+'<span style="font-size:13px;font-weight:600">Mahsulot rasmi</span>')+
   '<button type="button" class="fav" data-fav="'+p.id+'" aria-label="Saralanganlarga qoʻshish" aria-pressed="'+(favs.indexOf(p.id)>=0)+'"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/></svg></button>'+
   (p.badge?'<span class="badge" style="position:absolute;top:12px;left:12px;background:#6B0301;color:#F6EDE2;font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px">'+esc(p.badge)+'</span>':'')+'</div>'+
   '<div style="display:flex;flex-direction:column;gap:4px;padding:0 4px"><span style="font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#8E0A0E">'+labels[p.cat]+'</span>'+
-  '<h3 style="margin:0;font-size:17px;font-weight:600;color:#3D0103">'+esc(p.name)+'</h3><span style="font-size:18px;font-weight:700;color:#3D0103">'+esc(p.price)+'</span></div>'+
+  '<h3 class="open" data-open="'+p.id+'" style="margin:0;font-size:17px;font-weight:600;color:#3D0103">'+esc(p.name)+'</h3><span style="font-size:18px;font-weight:700;color:#3D0103">'+esc(p.price)+'</span></div>'+
   '<button type="button" class="btn add" data-id="'+p.id+'" style="text-align:center;background:#6B0301;color:#F6EDE2;padding:13px 16px;border-radius:999px;font-weight:600;font-size:15px;min-height:44px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border:0;cursor:pointer;font-family:Manrope,sans-serif;width:100%">Savatga qoʻshish</button></article>';
  }).join("");
 }
@@ -472,7 +519,13 @@ grid.addEventListener("click",function(e){var b=e.target.closest&&e.target.close
  try{localStorage.setItem("mila_fav",JSON.stringify(favs));}catch(err){}
  var keep=curCat;render();curCat=keep;var nb=grid.querySelector('[data-fav="'+id+'"]');if(nb){nb.classList.add("pop");}});
 /* kategoriya plitkalari */
-document.querySelectorAll(".cat[data-cat]").forEach(function(b){b.addEventListener("click",function(){curCat=b.getAttribute("data-cat");flip=!flip;render();var k=$("katalog");if(k)k.scrollIntoView({behavior:"smooth"});});});
+document.querySelectorAll(".cat[data-cat]").forEach(function(b){var c=b.getAttribute("data-cat");
+ var mine=items.filter(function(p){return p.cat===c;});var sm=b.querySelector("small");if(sm)sm.innerHTML=mine.length+" ta · Koʻrish <i>→</i>";
+ var cc=cats.filter(function(x){return x.id===c;})[0]||{};var im=cc.img||(mine.filter(function(p){return p.img;})[0]||{}).img;
+ if(im){var d=document.createElement("span");d.className="cimg";d.style.backgroundImage='url("'+String(im).replace(/["\\]/g,"")+'")';b.insertBefore(d,b.firstChild);var ic=b.querySelector(".ico");if(ic)ic.style.display="none";}
+ b.addEventListener("click",function(){go(c);});});
+$("back").addEventListener("click",function(){if(pushed){pushed=false;history.back();}else{history.replaceState(history.state,"",location.pathname+location.search);route();}});
+route();
 /* paydo bo'lish animatsiyasi */
 (function(){var els=document.querySelectorAll(".reveal");if(!("IntersectionObserver" in window)){els.forEach(function(x){x.classList.add("shown");});return;}
  var io=new IntersectionObserver(function(en){en.forEach(function(x){if(x.isIntersecting){x.target.classList.add("shown");io.unobserve(x.target);}});},{threshold:.12,rootMargin:"0px 0px -40px 0px"});
@@ -488,9 +541,12 @@ document.addEventListener("click",function(e){
  var t=e.target;
  if(t.closest&&t.closest("[data-close]")){closeSheet();return;}
  if(t.classList&&t.classList.contains("ov")){closeSheet();return;}
- var a=t.closest&&t.closest(".add");if(a){openVariant(a.getAttribute("data-id"));}
+ var a=t.closest&&t.closest(".add");if(a){openVariant(a.getAttribute("data-id"));return;}
+ if(t.closest&&t.closest(".fav"))return;
+ var o=t.closest&&t.closest("[data-open]");if(o){openVariant(o.getAttribute("data-open"));}
 });
-document.addEventListener("keydown",function(e){if(e.key==="Escape")closeSheet();});
+document.addEventListener("keydown",function(e){if(e.key==="Escape")closeSheet();
+ if((e.key==="Enter"||e.key===" ")&&e.target.getAttribute&&e.target.getAttribute("data-open")&&e.target.getAttribute("role")==="button"){e.preventDefault();openVariant(e.target.getAttribute("data-open"));}});
 // klaviatura ochilganda oyna balandligini moslash: tugma doim ko'rinadi
 function fitVV(){var vv=window.visualViewport;var h=vv?vv.height:window.innerHeight;document.querySelectorAll(".sheet").forEach(function(s){s.style.maxHeight=(h-24)+"px";});
  document.querySelectorAll(".ov").forEach(function(o){o.style.height=h+"px";o.style.top=(vv?vv.offsetTop:0)+"px";o.style.bottom="auto";});}
@@ -502,7 +558,9 @@ var vSel={};
 function chipRow(el,list,key){el.innerHTML="";list.forEach(function(v){var b=document.createElement("button");b.type="button";b.className="chip";b.textContent=v;b.setAttribute("aria-pressed",vSel[key]===v);
  b.onclick=function(){vSel[key]=v;chipRow(el,list,key);};el.appendChild(b);});}
 function openVariant(id){var p=byId[id];vSel={id:id,color:COLORS[0],size:p.cat==="uzuk"?SIZES[2]:"",q:1};
- $("vs-img").innerHTML=thumb(p);$("vs-cat").textContent=labels[p.cat];$("vs-t").textContent=p.name;$("vs-p").textContent=p.price;$("vs-q").textContent="1";
+ $("vs-img").innerHTML=thumb(p);
+ $("vs-big").innerHTML=p.img?'<img src="'+esc(p.img)+'" alt="'+esc(p.name)+'">':IMG.replace('width="28" height="28"','width="44" height="44"')+'<span style="font-size:13px;font-weight:600">Mahsulot rasmi</span>';
+ $("vs-d").textContent=p.desc||"";$("vs-d").style.display=p.desc?"block":"none";$("vs-cat").textContent=labels[p.cat];$("vs-t").textContent=p.name;$("vs-p").textContent=p.price;$("vs-q").textContent="1";
  chipRow($("vs-color"),COLORS,"color");
  $("vs-size-w").style.display=p.cat==="uzuk"?"flex":"none";if(p.cat==="uzuk")chipRow($("vs-size"),SIZES,"size");
  openSheet("vs");}
